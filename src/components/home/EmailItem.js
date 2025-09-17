@@ -24,6 +24,7 @@ export default function EmailItem({ email }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [tags, setTags] = useState(email.tags || []);
   const [newTag, setNewTag] = useState("");
+  const [starred, setStarred] = useState(email.isStarred || false); 
   const unread = email.isUnread;
 
   const addTag = () => {
@@ -39,8 +40,9 @@ export default function EmailItem({ email }) {
 
   return (
     <li
-      className={`relative flex items-start px-4 py-3 mb-2 rounded-md transition cursor-pointer
-        ${unread ? "bg-indigo-50 border-x-4 border-indigo-500" : "bg-white"}`}
+      className={`relative flex items-start px-4 py-3 mb-2 rounded-md transition-all duration-200 cursor-pointer
+        ${unread ? "bg-indigo-50 border-x-4 border-indigo-500" : "bg-white"}
+        hover:bg-indigo-100 hover:shadow-sm hover:border-indigo-300`}
     >
       {/* Avatar */}
       <Image
@@ -55,9 +57,20 @@ export default function EmailItem({ email }) {
       <div className="flex flex-col flex-grow">
         {/* Người gửi + thời gian + menu */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-indigo-600">
-            {email.sender}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Nút đánh dấu quan trọng */}
+            <button
+              onClick={() => setStarred(!starred)}
+              className={`text-lg ${starred ? "text-yellow-500" : "text-gray-300 hover:text-yellow-400"}`}
+            >
+              ★
+            </button>
+
+            <span className="text-sm font-semibold text-indigo-600">
+              {email.sender}
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">{email.time}</span>
 
@@ -91,9 +104,7 @@ export default function EmailItem({ email }) {
 
         {/* Nội dung email */}
         <p
-          className={`text-xs ${
-            unread ? "text-gray-700 font-medium" : "text-gray-500"
-          } line-clamp-3`}
+          className={`text-xs ${unread ? "text-gray-700 font-medium" : "text-gray-500"} line-clamp-3`}
           style={{ overflowWrap: "anywhere" }}
         >
           {email.body}
@@ -102,11 +113,7 @@ export default function EmailItem({ email }) {
         {/* Tags */}
         {tags.length > 0 || editing ? (
           <div className="mt-2">
-            <div
-              className={`flex ${
-                expanded ? "flex-wrap" : "flex-nowrap overflow-hidden"
-              }`}
-            >
+            <div className={`flex ${expanded ? "flex-wrap" : "flex-nowrap overflow-hidden"}`}>
               {(expanded ? tags : tags.slice(0, 5)).map((tag) => (
                 <Tag
                   key={tag.id}

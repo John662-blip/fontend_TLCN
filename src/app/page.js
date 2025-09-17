@@ -28,6 +28,7 @@ const dummyEmails = [
     `,
     time: "11:35",
     isUnread: true,
+    isStarred:true,
     tags:[
       {
         id: 1,
@@ -76,6 +77,7 @@ const dummyEmails = [
     body: "- Biên lai của bạn từ ",
     time: "11:30",
     isUnread: true,
+    isStarred:true,
   },
   {
     id: "asksdd",
@@ -89,7 +91,8 @@ const dummyEmails = [
         id:2,
         name : "Qwen"
       } 
-    ]
+    ],
+    isStarred:false,
   },
   {
     id: "ask23323",
@@ -213,7 +216,7 @@ const tag = [
   {
     id:2,
     name : "Qwen"
-  } 
+  }
 ]
 export default function Home() {
   const [showCompose, setShowCompose] = useState(false);

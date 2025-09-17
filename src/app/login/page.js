@@ -50,10 +50,6 @@ export default function LoginPage() {
             aria-label="Password"
             required
           />
-          <div className="flex justify-between items-center text-sm text-blue-600">
-            <a href="#" className="hover:underline">Quên mật khẩu?</a>
-            <a href="#" className="hover:underline">Tạo tài khoản mới</a>
-          </div>
           <button
             type="submit"
             className="mt-4 bg-blue-600 text-white font-semibold rounded-full px-6 py-3 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500"

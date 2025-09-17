@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
-export default function Sidebar({onNewMail }) {
+import { useState } from "react";
+export default function Sidebar({onNewMail ,tags,onAddTag}) {
   return (
 <nav className="flex flex-col bg-gray-900 text-white w-120 px-3 py-4 select-none">
   <button 
@@ -28,15 +29,42 @@ export default function Sidebar({onNewMail }) {
       </a>
     </li>
     <li>
-  <a className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-gray-700" href="#">
-    <span className="text-2xl">⭐</span> 
-    Thư quan trọng
-    <span className="ml-auto text-xs font-normal text-gray-400">14</span>
-  </a>
-</li>
-
+      <a className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-gray-700" href="#">
+        <span className="text-2xl">⭐</span> 
+        Thư quan trọng
+        <span className="ml-auto text-xs font-normal text-gray-400">14</span>
+      </a>
+    </li>
   </ul>
-</nav>
 
+  {/* Thêm phần Nhãn */}
+  <div className="mt-6">
+  <h3 className="px-3 text-xs uppercase text-gray-400 font-semibold mb-2">
+    Nhãn
+  </h3>
+  <ul className="flex flex-col gap-1 text-sm font-medium">
+    {tags.map((tag) => (
+      <li key={tag.id}>
+        <a
+          className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-gray-700"
+          href="#"
+        >
+          <span className="text-lg">🏷️</span> {tag.name}
+        </a>
+      </li>
+    ))}
+    {/* Thêm nút + */}
+    <li>
+      <button
+        onClick={() => onAddTag()}
+        className="flex items-center gap-2 rounded-md px-3 py-2 text-indigo-400 hover:bg-gray-700 w-full text-left"
+      >
+        <span className="text-lg">＋</span> Thêm nhãn
+      </button>
+    </li>
+  </ul>
+</div>
+
+</nav>
   );
 }

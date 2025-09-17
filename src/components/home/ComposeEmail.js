@@ -41,11 +41,11 @@ export default function ComposeEmail({ onClose }) {
         ✖
       </button>
 
-      <h2 className="text-xl font-semibold mb-4">Compose Email</h2>
+      <h2 className="text-xl font-semibold mb-4">Thư mới</h2>
       <form onSubmit={handleSend} className="flex flex-col gap-3">
         <input
           type="email"
-          placeholder="To"
+          placeholder="Đến"
           value={to}
           onChange={(e) => setTo(e.target.value)}
           className="border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -53,14 +53,14 @@ export default function ComposeEmail({ onClose }) {
         />
         <input
           type="text"
-          placeholder="Subject"
+          placeholder="Chủ đề"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           className="border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
           required
         />
         <textarea
-          placeholder="Body"
+          placeholder="Nội dung"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={8}
@@ -71,12 +71,12 @@ export default function ComposeEmail({ onClose }) {
         {/* Upload file */}
         <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-            Attach files
+            Tài liệu đính kèm
         </label>
 
         {/* Nút chọn file đẹp */}
         <label className="inline-flex items-center px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-md cursor-pointer text-indigo-600 hover:bg-indigo-100 transition">
-            📎 Add Attachment
+            📎 Đính kèm tệp
             <input
             type="file"
             multiple

@@ -5,6 +5,7 @@ import Sidebar from "@/components/home/Sidebar";
 import EmailList from "@/components/home/EmailList";
 import ComposeEmail from "@/components/home/ComposeEmail";
 import { useState } from "react";
+import AddTagModal from "@/components/home/AddTagModal";
 const dummyEmails = [
   {
     id: "1",
@@ -27,6 +28,32 @@ const dummyEmails = [
     `,
     time: "11:35",
     isUnread: true,
+    tags:[
+      {
+        id: 1,
+        name:"mt_5"
+      },
+      {
+        id:2,
+        name : "Qwen"
+      },
+      {
+        id: 6,
+        name:"mt_51"
+      },
+      {
+        id:7,
+        name : "Deek"
+      } ,
+      {
+        id: 8,
+        name:"Ok_"
+      },
+      {
+        id:9,
+        name : "Oni"
+      } 
+    ]
   },
   {
     id: "ask",
@@ -35,6 +62,12 @@ const dummyEmails = [
     body: "- Biên lai của bạn từ ",
     time: "11:35",
     isUnread: false,
+    tags:[
+      {
+        id: 1,
+        name:"mt_5"
+      }
+    ]
   },
   {
     id: "ask23",
@@ -51,6 +84,12 @@ const dummyEmails = [
     body: "- Biên lai của bạn từ ",
     time: "11:35",
     isUnread: false,
+    tags:[
+      {
+        id:2,
+        name : "Qwen"
+      } 
+    ]
   },
   {
     id: "ask23323",
@@ -166,24 +205,43 @@ const dummyEmails = [
     isUnread: true,
   },
 ];
-
+const tag = [
+  {
+    id: 1,
+    name:"mt_5"
+  },
+  {
+    id:2,
+    name : "Qwen"
+  } 
+]
 export default function Home() {
   const [showCompose, setShowCompose] = useState(false);
+  const [showAddTag, setShowAddTag] = useState(false);
 
   return (
     <div className="bg-[#f1f3f4] min-h-screen flex flex-col">
       <Header />
       <main className="flex flex-grow overflow-hidden relative">
-      <Sidebar onNewMail={() => setShowCompose(true)} />
-
-      {/* Bọc EmailList trong container h-full */}
+      <Sidebar onAddTag = {()=>setShowAddTag(true)} tags = {tag} onNewMail={() => setShowCompose(true)} />
+      {/* //Sửa nội dung trong này  */}
       <div className="flex-grow flex flex-col h-full overflow-hidden">
         <EmailList emails={dummyEmails} />
       </div>
+      {/* //Sửa nội dung */}
 
       {showCompose && (
         <div className="fixed bottom-4 right-4 z-50">
           <ComposeEmail onClose={() => setShowCompose(false)} />
+        </div>
+      )}
+      {showAddTag && (
+        <div className="fixed bottom-4 right-4 z-50">
+        <AddTagModal
+          onClose={() => setShowAddTag(false)}
+          onSave={(newTag) => {}}
+          
+        />
         </div>
       )}
     </main>

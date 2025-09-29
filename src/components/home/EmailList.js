@@ -1,5 +1,5 @@
+// EmailList.js
 "use client";
-import Image from "next/image";
 import EmailItem from "./EmailItem";
 
 export default function EmailList({ emails }) {
@@ -11,6 +11,5 @@ export default function EmailList({ emails }) {
         ))}
       </ul>
     </section>
-
   );
 }

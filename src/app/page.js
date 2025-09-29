@@ -100,7 +100,7 @@ const dummyEmails = [
     subject: " OK jsfjkdfj",
     body: "- Biên lai của bạn từ ",
     time: "11:30",
-    isUnread: true,
+    isUnread: false,
   },{
     id: "askddd",
     sender: "name",
@@ -115,7 +115,7 @@ const dummyEmails = [
     subject: " OK jsfjkdfj",
     body: "- Biên lai của bạn từ ",
     time: "11:30",
-    isUnread: true,
+    isUnread: false,
   },{
     id: "asksgfr",
     sender: "name",
@@ -130,7 +130,7 @@ const dummyEmails = [
     subject: " OK jsfjkdfj",
     body: "- Biên lai của bạn từ ",
     time: "11:30",
-    isUnread: true,
+    isUnread: false,
   },{
     id: "asksdf",
     sender: "name",
@@ -145,7 +145,7 @@ const dummyEmails = [
     subject: " OK jsfjkdfj",
     body: "- Biên lai của bạn từ ",
     time: "11:30",
-    isUnread: true,
+    isUnread: false,
   },{
     id: "asfgfk",
     sender: "name",
@@ -160,7 +160,7 @@ const dummyEmails = [
     subject: " OK jsfjkdfj",
     body: "- Biên lai của bạn từ ",
     time: "11:30",
-    isUnread: true,
+    isUnread: false,
   },{
     id: "aewrsk",
     sender: "name",
@@ -175,7 +175,7 @@ const dummyEmails = [
     subject: " OK jsfjkdfj",
     body: "- Biên lai của bạn từ ",
     time: "11:30",
-    isUnread: true,
+    isUnread: false,
   },{
     id: "avgjhsk",
     sender: "name",
@@ -190,7 +190,7 @@ const dummyEmails = [
     subject: " OK jsfjkdfj",
     body: "- Biên lai của bạn từ ",
     time: "11:30",
-    isUnread: true,
+    isUnread: false,
   },{
     id: "asfdgfbgbk",
     sender: "name",
@@ -226,7 +226,12 @@ export default function Home() {
     <div className="bg-[#f1f3f4] min-h-screen flex flex-col">
       <Header />
       <main className="flex flex-grow overflow-hidden relative">
-      <Sidebar onAddTag = {()=>setShowAddTag(true)} tags = {tag} onNewMail={() => setShowCompose(true)} />
+      <Sidebar
+       onAddTag = {()=>setShowAddTag(true)} 
+       tags = {tag} 
+       onNewMail={() => setShowCompose(true)} 
+        
+        />
       {/* //Sửa nội dung trong này  */}
       <div className="flex-grow flex flex-col h-full overflow-hidden">
         <EmailList emails={dummyEmails} />

@@ -2,17 +2,73 @@
 
 import Image from "next/image";
 import { useState } from "react";
-
+import { getValidAccessToken } from "@/untils/getToken";
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async  (e) => {
     e.preventDefault();
-    // Ví dụ: hiển thị dữ liệu
-    console.log("Username:", username);
-    console.log("Password:", password);
-    alert(`Đăng nhập với username: ${username}`);
+    try {
+    const response = await fetch("http://localhost:8080/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password,
+      }),
+    });
+      if (!response.ok) {
+        alert("Đăng nhập thất bại");
+      }
+      else{
+        const data = await response.json();
+        console.log("Phản hồi từ server:", data);
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+        localStorage.setItem("expires_at", Date.now() + data.expires_in * 1000);
+        localStorage.setItem("refresh_expires_at", Date.now() + data.refresh_expires_in * 1000);
+
+        alert(`Đăng nhập thành công: ${username}`);
+      }
+    } catch (error) {
+      console.error("Lỗi đăng nhập:", error);
+      alert("Tên đăng nhập hoặc mật khẩu không đúng!");
+    }
+  };
+
+  const handleClickcheck = async  (e) => {
+    e.preventDefault();
+    let token = await getValidAccessToken()
+    if (!token) {
+      console.log("chua dang nhap")
+      return
+    } // logouy
+    else{
+    try {
+    const response = await fetch("http://localhost:8080/checkLogin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      }
+    });
+      if (!response.ok) {
+        alert("Đăng nhập thất bại");
+      }
+      else{
+        const data = await response.json();
+        console.log("Phản hồi từ server:", data);
+
+        alert(`Đăng nhập thành công: ${username}`);
+      }
+    } catch (error) {
+      console.error("Lỗi đăng nhập:", error);
+      alert("Tên đăng nhập hoặc mật khẩu không đúng!");
+    }
+  }
   };
 
   return (
@@ -57,6 +113,7 @@ export default function LoginPage() {
             Đăng nhập
           </button>
         </form>
+        <button onClick={(e)=>handleClickcheck(e)}> check</button>
       </section>
     </div>
   );

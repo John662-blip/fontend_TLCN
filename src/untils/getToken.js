@@ -1,13 +1,12 @@
+import Cookies from "js-cookie";
 
-
-// Xin access token mới bằng refresh token
+// 🔄 Xin access token mới bằng refresh token
 export const refreshAccessToken = async () => {
-  const refreshToken = localStorage.getItem("refresh_token");
-  const refreshExpiresAt = localStorage.getItem("refresh_expires_at");
+  const refreshToken = Cookies.get("refresh_token");
 
-  // Nếu refresh token hết hạn → logout
-  if (!refreshToken || Date.now() >= parseInt(refreshExpiresAt)) {
-    console.warn("Refresh token hết hạn, logout ngay!");
+  // Nếu không có refresh token → logout
+  if (!refreshToken) {
+    console.warn("⚠️ Không tìm thấy refresh token, logout!");
     logout();
     return null;
   }
@@ -16,57 +15,57 @@ export const refreshAccessToken = async () => {
     const response = await fetch("http://localhost:8080/refreshToken", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: refreshToken }),
+      body: JSON.stringify({ refreshToken }),
     });
 
     if (!response.ok) {
-      console.error("Lỗi khi refresh token:", response.status);
+      console.error("❌ Lỗi khi refresh token:", response.status);
       logout();
       return null;
     }
 
     const data = await response.json();
 
-    // Lưu token mới
-    localStorage.setItem("access_token", data.access_token);
-    localStorage.setItem("refresh_token", data.refresh_token);
-    localStorage.setItem("expires_at", Date.now() + data.expires_in * 1000);
-    localStorage.setItem(
-      "refresh_expires_at",
-      Date.now() + data.refresh_expires_in * 1000
-    );
+    // ✅ Lưu token mới vào cookie
+    Cookies.set("access_token", data.access_token, {
+      expires: (data.expires_in - 500) / 86400, // đổi giây → ngày
+      path: "/",
+      secure: true,
+      sameSite: "Strict",
+    });
 
-    console.log("🔄 Access token mới:", data.access_token);
+    Cookies.set("refresh_token", data.refresh_token, {
+      expires: (data.refresh_expires_in - 500) / 86400,
+      path: "/",
+      secure: true,
+      sameSite: "Strict",
+    });
+
+    console.log("🔁 Access token mới:", data.access_token);
     return data.access_token;
   } catch (error) {
-    console.error("Lỗi khi gọi API refresh:", error);
+    console.error("🔥 Lỗi khi gọi API refresh:", error);
     logout();
     return null;
   }
 };
 
-// Lấy access token hợp lệ
+// ✅ Lấy access token hợp lệ
 export const getValidAccessToken = async () => {
-  const accessToken = localStorage.getItem("access_token");
-  const expiresAt = localStorage.getItem("expires_at");
+  const accessToken = Cookies.get("access_token");
 
-  if (!accessToken || !expiresAt) {
-    return null;
+  // Nếu không có access token → thử refresh
+  if (!accessToken) {
+    return await refreshAccessToken();
   }
+  else{
 
-  // Nếu access token còn hạn → dùng luôn
-  if (Date.now() < parseInt(expiresAt) - 30 * 1000) {
-    return accessToken;
+   return accessToken;
   }
-
-  // Nếu access token hết hạn nhưng refresh token còn hạn → xin mới
-  return await refreshAccessToken();
 };
 
-// Logout
+// 🚪 Logout
 export const logout = () => {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  localStorage.removeItem("expires_at");
-  localStorage.removeItem("refresh_expires_at");
+  Cookies.remove("access_token", { path: "/" });
+  Cookies.remove("refresh_token", { path: "/" });
 };

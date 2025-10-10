@@ -3,10 +3,11 @@
 import Image from "next/image";
 import { useState } from "react";
 import { getValidAccessToken } from "@/untils/getToken";
+import Cookies from "js-cookie";
+
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
   const handleSubmit = async  (e) => {
     e.preventDefault();
     try {
@@ -26,10 +27,8 @@ export default function LoginPage() {
       else{
         const data = await response.json();
         console.log("Phản hồi từ server:", data);
-        localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
-        localStorage.setItem("expires_at", Date.now() + data.expires_in * 1000);
-        localStorage.setItem("refresh_expires_at", Date.now() + data.refresh_expires_in * 1000);
+        Cookies.set("access_token", data.access_token, { expires: data.expires_in-500 / 86400, path: "/" });
+        Cookies.set("refresh_token", data.refresh_token, { expires: data.refresh_expires_in-500 / 86400, path: "/" });
 
         alert(`Đăng nhập thành công: ${username}`);
       }

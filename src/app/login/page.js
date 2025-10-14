@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 import { getValidAccessToken } from "@/untils/getToken";
 import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter();
   const handleSubmit = async  (e) => {
     e.preventDefault();
     try {
@@ -21,6 +23,7 @@ export default function LoginPage() {
         password: password,
       }),
     });
+
       if (!response.ok) {
         alert("Đăng nhập thất bại");
       }
@@ -29,8 +32,7 @@ export default function LoginPage() {
         console.log("Phản hồi từ server:", data);
         Cookies.set("access_token", data.access_token, { expires: data.expires_in-500 / 86400, path: "/" });
         Cookies.set("refresh_token", data.refresh_token, { expires: data.refresh_expires_in-500 / 86400, path: "/" });
-
-        alert(`Đăng nhập thành công: ${username}`);
+        router.push("/");
       }
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
@@ -55,13 +57,13 @@ export default function LoginPage() {
       }
     });
       if (!response.ok) {
-        alert("Đăng nhập thất bại");
+        // alert("Đăng nhập thất bại");
       }
       else{
         const data = await response.json();
-        console.log("Phản hồi từ server:", data);
+        // console.log("Phản hồi từ server:", data);
 
-        alert(`Đăng nhập thành công: ${username}`);
+        // alert(`Đăng nhập thành công: ${username}`);
       }
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
@@ -112,7 +114,7 @@ export default function LoginPage() {
             Đăng nhập
           </button>
         </form>
-        <button onClick={(e)=>handleClickcheck(e)}> check</button>
+        {/* <button onClick={(e)=>handleClickcheck(e)}> check</button> */}
       </section>
     </div>
   );

@@ -30,12 +30,12 @@ export default function LoginPage() {
       else{
         const data = await response.json();
         console.log("Phản hồi từ server:", data);
-        Cookies.set("access_token", data.access_token, { expires: data.expires_in-500 / 86400, path: "/" });
-        Cookies.set("refresh_token", data.refresh_token, { expires: data.refresh_expires_in-500 / 86400, path: "/" });
+        Cookies.set("access_token", data.access_token, { expires: (data.expires_in-50) / 86400, path: "/" });
+        Cookies.set("refresh_token", data.refresh_token, { expires: (data.refresh_expires_in-500) / 86400, path: "/" });
         router.push("/");
       }
     } catch (error) {
-      console.error("Lỗi đăng nhập:", error);
+      console.log("Lỗi đăng nhập:", error);
       alert("Tên đăng nhập hoặc mật khẩu không đúng!");
     }
   };

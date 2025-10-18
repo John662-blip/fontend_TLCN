@@ -28,7 +28,7 @@ export const refreshAccessToken = async () => {
 
     // ✅ Lưu token mới vào cookie
     Cookies.set("access_token", data.access_token, {
-      expires: (data.expires_in - 500) / 86400, // đổi giây → ngày
+      expires: (data.expires_in - 50) / 86400, // đổi giây → ngày
       path: "/",
       secure: true,
       sameSite: "Strict",

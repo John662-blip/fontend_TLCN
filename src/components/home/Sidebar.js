@@ -96,7 +96,7 @@ export default function Sidebar({ onNewMail, tags, onAddTag }) {
                   className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-700 transition"
                   href="#"
                 >
-                  <Tag className="w-4 h-4 text-gray-300" /> {tag.name}
+                  <Tag className="w-4 h-4 text-gray-300" /> {tag.key}
                 </a>
               </li>
             ))}

@@ -1,19 +1,44 @@
 "use client";
 import { useState } from "react";
 import { PlusCircle, X } from "lucide-react";
+import { getValidAccessToken } from "@/untils/getToken";
 
-export default function AddTagModal({ onClose, onSave }) {
+export default function AddTagModal({ onClose, LoadTags }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [autoLabel, setAutoLabel] = useState("off");
-
-  const handleSave = () => {
+  const handleSave = async  () => {
     if (description.trim().split(" ").length < 50) {
       alert("Mô tả phải có tối thiểu 50 từ!");
       return;
     }
-    onSave({ name, description, autoLabel });
-    onClose();
+    let isAutoTagging = false 
+    if (autoLabel == "on") isAutoTagging = true
+    try {
+      let token = await getValidAccessToken()
+      const response = await fetch("http://localhost:8080/tag/addTag", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        key: name,
+        description: description,
+        isAutoTagging: isAutoTagging,
+      })
+    });
+      if (response.ok){
+        LoadTags()
+        onClose();
+      }
+      else{
+        const data = await response.json();
+        console.log("Lỗi ", data);
+      }
+    } catch (error) {
+      console.log("Lỗi ", error);
+    }
   };
 
   return (

@@ -4,8 +4,9 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/home/Sidebar";
 import EmailList from "@/components/home/EmailList";
 import ComposeEmail from "@/components/home/ComposeEmail";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import AddTagModal from "@/components/home/AddTagModal";
+import { getValidAccessToken } from "@/untils/getToken";
 const dummyEmails = [
   {
     id: "1",
@@ -208,19 +209,33 @@ const dummyEmails = [
     isUnread: true,
   },
 ];
-const tag = [
-  {
-    id: 1,
-    name:"mt_5"
-  },
-  {
-    id:2,
-    name : "Qwen"
-  }
-]
+
 export default function Home() {
   const [showCompose, setShowCompose] = useState(false);
   const [showAddTag, setShowAddTag] = useState(false);
+  const [tag,setTag] = useState([])
+  const LoadTags = async  () => {
+    try {
+      let token = await getValidAccessToken()
+      const response = await fetch("http://localhost:8080/tag/getListTag", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      }
+    });
+      if (response.ok){
+        const data = await response.json();
+        setTag(data)
+        console.log("Phản hồi từ server:", data);
+      }
+    } catch (error) {
+      console.log("Lỗi ", error);
+    }
+  };
+  useEffect(() => {
+    LoadTags();
+  }, []);
 
   return (
     <div className="bg-[#f1f3f4] min-h-screen flex flex-col">
@@ -247,7 +262,7 @@ export default function Home() {
         <div className="fixed bottom-4 right-4 z-50">
         <AddTagModal
           onClose={() => setShowAddTag(false)}
-          onSave={(newTag) => {}}
+          LoadTags={() => LoadTags()}
           
         />
         </div>

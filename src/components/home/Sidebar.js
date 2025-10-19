@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Swal from "sweetalert2";
 import {
   Inbox,
   Send,
@@ -9,12 +10,71 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
+  MoreVertical 
 } from "lucide-react";
-
-export default function Sidebar({ onNewMail, tags, onAddTag }) {
+import ChangeTagModel from "./ChangeTagModel";
+import { getValidAccessToken } from "@/untils/getToken";
+// import { useState } from "react";
+export default function Sidebar({ onNewMail, tags, onAddTag ,LoadTags}) {
   const [collapsed, setCollapsed] = useState(false);
+  const [openTagMenu, setOpenTagMenu] = useState(null);
+
+  const [isOpenChangeTag, setIsOpenChangeTag] = useState(false);
+  const [selectedTagId, setSelectedTagId] = useState(null);
+  const handleEditTag = (id) => {
+    setSelectedTagId(id);
+    setIsOpenChangeTag(true);
+    setOpenTagMenu(false)
+  };
+
+  const handleCloseModal = () => {
+    setIsOpenChangeTag(false);
+    setSelectedTagId(null);
+  };
+  const handleDeleteTag = async (idTag) => {
+    setOpenTagMenu(false)
+    const result = await Swal.fire({
+      title: "Bạn có chắc chắn?",
+      text: "Nhãn này sẽ bị xóa vĩnh viễn!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Xóa",
+      cancelButtonText: "Hủy",
+      confirmButtonColor: "#e02424", // màu đỏ
+      cancelButtonColor: "#6b7280",  // màu xám
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      let token = await getValidAccessToken();
+      const response = await fetch("http://localhost:8080/tag/deleteTag", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          idTag: idTag,
+        })
+      });
+
+      if (response.ok) {
+        Swal.fire("Đã xóa!", "Nhãn đã được xóa thành công.", "success");
+        LoadTags();
+      } else {
+        const data = await response.json();
+        console.log("Lỗi: ", data);
+        Swal.fire("Lỗi!", "Không thể xóa nhãn.", "error");
+      }
+    } catch (error) {
+      console.log("Lỗi: ", error);
+      Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
+    }
+  };
 
   return (
+    <>
     <nav
       className={`flex flex-col bg-gray-900 text-white transition-all duration-300
       ${collapsed ? "w-20" : "w-128"} px-3 py-4 select-none h-[calc(100vh-80px)] relative shadow-lg`}
@@ -91,15 +151,41 @@ export default function Sidebar({ onNewMail, tags, onAddTag }) {
           </h3>
           <ul className="flex flex-col gap-1 text-sm font-medium">
             {tags.map((tag) => (
-              <li key={tag.id}>
-                <a
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-700 transition"
-                  href="#"
-                >
-                  <Tag className="w-4 h-4 text-gray-300" /> {tag.key}
-                </a>
+              <li key={tag.id} className="relative group">
+                <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-gray-700 transition">
+                  <a className="flex items-center gap-2" href="#">
+                    <Tag className="w-4 h-4 text-gray-300" /> {tag.key}
+                  </a>
+                  <button
+                    onClick={() =>
+                      setOpenTagMenu(openTagMenu === tag.id ? null : tag.id)
+                    }
+                    className="p-1 rounded hover:bg-gray-600"
+                  >
+                    <MoreVertical className="w-4 h-4 text-gray-300" />
+                  </button>
+                </div>
+
+                {/* Dropdown menu */}
+                {openTagMenu === tag.id && (
+                  <div className="absolute right-0 mt-1 w-32 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50">
+                    <button
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-700 cursor-pointer"
+                      onClick={() => handleEditTag(tag.id)}
+                    >
+                      Sửa Tag
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTag(tag.id)} // TODO: gọi hàm thật
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-700 text-red-400 cursor-pointer"
+                    >
+                      Xóa Tag
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
+
             <li>
               <button
                 onClick={onAddTag}
@@ -119,6 +205,16 @@ export default function Sidebar({ onNewMail, tags, onAddTag }) {
       >
         {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
       </button>
+      
     </nav>
+    { isOpenChangeTag && (
+      <ChangeTagModel
+          onClose={handleCloseModal}
+          LoadTags={LoadTags} // hoặc hàm load lại danh sách
+          idTag={selectedTagId}
+        />
+      )}
+    </>
   );
+  
 }

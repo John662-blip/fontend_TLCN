@@ -245,6 +245,7 @@ export default function Home() {
        onAddTag = {()=>setShowAddTag(true)} 
        tags = {tag} 
        onNewMail={() => setShowCompose(true)} 
+       LoadTags={() => LoadTags()}
         
         />
       {/* //Sửa nội dung trong này  */}

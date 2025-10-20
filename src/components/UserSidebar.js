@@ -34,7 +34,7 @@ export default function UserSidebar({ onClose }) {
         <div className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-2">
             <li>
-              <button className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+              <button onClick={()=>router.push("/profile")} className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition cursor-pointer">
                 <User className="w-5 h-5 text-indigo-500" />
                 <span>Thông tin cá nhân</span>
               </button>

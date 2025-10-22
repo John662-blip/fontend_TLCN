@@ -40,9 +40,9 @@ export default function UserSidebar({ onClose }) {
               </button>
             </li>
             <li>
-              <button className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+              <button onClick={()=>router.push("/email-summary-sidebar")} className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition cursor-pointer">
                 <CalendarDays className="w-5 h-5 text-green-500" />
-                <span>Sự kiện trong tuần</span>
+                <span>Tóm tắt sự kiện tháng này</span>
               </button>
             </li>
           </ul>

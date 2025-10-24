@@ -145,7 +145,7 @@ export default function Home() {
       <div className="flex-grow flex flex-col h-full overflow-hidden"
         onScroll={handleScroll}
       >
-        <EmailList emails={emails} />
+        <EmailList emails={emails} tags = {tag}/>
         {loading && <p className="text-center py-2">Đang tải...</p>}
       </div>
       {/* //Sửa nội dung */}

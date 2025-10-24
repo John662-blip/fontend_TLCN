@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Star, StarOff, MoreVertical, X } from "lucide-react";
+import Swal from "sweetalert2";
+import { getValidAccessToken } from "@/untils/getToken";
 
 function Tag({ name, onRemove }) {
   return (
@@ -15,23 +17,89 @@ function Tag({ name, onRemove }) {
   );
 }
 
-export default function EmailItem({ email }) {
+export default function EmailItem({ email, tagAll }) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [tags, setTags] = useState(email.tags || []);
-  const [newTag, setNewTag] = useState("");
+  const [tags, setTags] = useState(email.tags ?? []); // ✅ Mảng Long
+  const [newTagId, setNewTagId] = useState("");
   const [starred, setStarred] = useState(email.type === 0);
   const unread = email.isUnread;
 
-  const addTag = () => {
-    if (newTag.trim()) {
-      setTags([...tags, { id: Date.now(), name: newTag }]);
-      setNewTag("");
+  // ✅ Hàm lấy tên tag từ id
+  const getTagNameById = (id) => {
+    const foundTag = tagAll.find((t) => t.id === id);
+    return foundTag ? foundTag.key : "Không rõ";
+  };
+
+  // ✅ Thêm tag
+  const handleAddTag = async () => {
+    if (!newTagId) {
+      Swal.fire("Lỗi!", "Không thể thêm.", "error");
+      return;
+    }
+    try {
+      const token = await getValidAccessToken();
+      const response = await fetch(`http://localhost:8080/tag/addTagToMail`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          idTag: newTagId,
+          mailID: email.id,
+        }),
+      });
+
+      if (response.ok) {
+        const tagIdNum = parseInt(newTagId);
+        if (!tags.includes(tagIdNum)) {
+          setTags([...tags, tagIdNum]);
+        }
+        setNewTagId("");
+        Swal.fire("Thành công!", "Thêm thành công.", "success");
+      } else {
+        Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
+      }
+    } catch (error) {
+      console.error("Lỗi ", error);
+      Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
     }
   };
 
-  const removeTag = (id) => setTags(tags.filter((t) => t.id !== id));
+
+  // ✅ Xóa tag
+  const handleRemoveTag = async (id_tagRemove) => {
+    try {
+      const token = await getValidAccessToken();
+      const response = await fetch(`http://localhost:8080/tag/removeTagFromMail`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          idTag: id_tagRemove,
+          mailID: email.id,
+        }),
+      });
+
+      if (response.ok) {
+        const tagIdNum = parseInt(id_tagRemove);
+        setTags(tags.filter((id) => id !== tagIdNum));
+
+        Swal.fire("Thành công!", "Đã xóa tag khỏi email.", "success");
+      } else {
+        Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
+      }
+    } catch (error) {
+      console.error("Lỗi ", error);
+      Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
+    }
+  };
+
+  const safeTags = tags ?? [];
 
   return (
     <li
@@ -44,7 +112,11 @@ export default function EmailItem({ email }) {
         onClick={() => setStarred(!starred)}
         className="text-gray-400 hover:text-yellow-500 mr-3"
       >
-        {starred ? <Star className="fill-yellow-400 text-yellow-400" size={18}/> : <StarOff size={18}/>}
+        {starred ? (
+          <Star className="fill-yellow-400 text-yellow-400" size={18} />
+        ) : (
+          <StarOff size={18} />
+        )}
       </button>
 
       {/* Main content */}
@@ -54,9 +126,11 @@ export default function EmailItem({ email }) {
           <span className="text-sm font-semibold text-gray-800 truncate max-w-[200px]">
             {email.userTo}
           </span>
-          
+
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500">{new Date(email.createAt).toLocaleString()}</span>
+            <span className="text-xs text-gray-500">
+              {new Date(email.createAt).toLocaleString()}
+            </span>
             <div className="relative">
               <button
                 className="p-1 rounded hover:bg-gray-200"
@@ -87,18 +161,23 @@ export default function EmailItem({ email }) {
         </p>
 
         {/* Tags */}
-        {(tags.length > 0 || editing) && (
+        {((safeTags.length > 0) || editing) && (
           <div className="mt-1">
-            <div className={`flex flex-wrap`}>
-              {(expanded ? tags : tags.slice(0, 4)).map((tag) => (
-                <Tag key={tag.id} name={tag.name} onRemove={editing ? () => removeTag(tag.id) : null} />
+            <div className="flex flex-wrap">
+              {(expanded ? safeTags : safeTags.slice(0, 4)).map((tagId) => (
+                <Tag
+                  key={tagId}
+                  name={getTagNameById(tagId)}
+                  onRemove={editing ? () => handleRemoveTag(tagId) : null}
+                />
               ))}
-              {!expanded && tags.length > 4 && (
+
+              {!expanded && safeTags.length > 4 && (
                 <button
                   onClick={() => setExpanded(true)}
                   className="px-2 text-xs text-blue-500 hover:underline"
                 >
-                  +{tags.length - 4} thêm
+                  +{safeTags.length - 4} thêm
                 </button>
               )}
             </div>
@@ -106,15 +185,24 @@ export default function EmailItem({ email }) {
             {/* Tag Editing */}
             {editing && (
               <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  placeholder="Nhập tên tag..."
-                  className="border px-2 py-1 text-xs rounded w-32"
-                />
+                <select
+                  value={newTagId}
+                  onChange={(e) => setNewTagId(e.target.value)}
+                  className="border px-2 py-1 text-xs rounded w-40"
+                >
+                  <option value="">-- Chọn tag --</option>
+                  {tagAll.map((t) => (
+                    <option
+                      key={t.id}
+                      value={t.id}
+                      disabled={safeTags.includes(t.id)} // disable nếu đã có
+                    >
+                      {t.key}
+                    </option>
+                  ))}
+                </select>
                 <button
-                  onClick={addTag}
+                  onClick={handleAddTag}
                   className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   Thêm
@@ -123,7 +211,7 @@ export default function EmailItem({ email }) {
                   onClick={() => setEditing(false)}
                   className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                 >
-                  Lưu
+                  Đóng
                 </button>
               </div>
             )}

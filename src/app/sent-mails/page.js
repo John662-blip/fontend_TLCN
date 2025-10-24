@@ -8,7 +8,7 @@ import { useState,useEffect } from "react";
 import AddTagModal from "@/components/home/AddTagModal";
 import { getValidAccessToken } from "@/untils/getToken";
 
-export default function Home() {
+export default function sent_mails() {
   const [showCompose, setShowCompose] = useState(false);
   const [showAddTag, setShowAddTag] = useState(false);
   const [tag,setTag] = useState([])
@@ -40,7 +40,7 @@ export default function Home() {
 
     try {
         let token = await getValidAccessToken();
-        const response = await fetch(`http://localhost:8080/mail/inbox-mails?page=${page}&size=${pageInfo.size}`, {
+        const response = await fetch(`http://localhost:8080/mail/sent-mails?page=${page}&size=${pageInfo.size}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -76,7 +76,7 @@ export default function Home() {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
     if (scrollHeight - scrollTop === clientHeight) {
       if (pageInfo.number + 1 < pageInfo.totalPages) {
-        LoadMail(pageInfo.number + 1); // load trang tiếp theo
+        LoadMail(pageInfo.number + 1); 
       }
     }
   };
@@ -90,7 +90,8 @@ export default function Home() {
        tags = {tag} 
        onNewMail={() => setShowCompose(true)} 
        LoadTags={() => LoadTags()}
-       activeMenu="inbox"
+       activeMenu="sent"
+        
         />
       {/* //Sửa nội dung trong này  */}
       <div className="flex-grow flex flex-col h-full overflow-hidden"

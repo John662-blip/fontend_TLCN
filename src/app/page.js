@@ -7,6 +7,8 @@ import ComposeEmail from "@/components/home/ComposeEmail";
 import { useState,useEffect } from "react";
 import AddTagModal from "@/components/home/AddTagModal";
 import { getValidAccessToken } from "@/untils/getToken";
+import { Client } from '@stomp/stompjs';
+import SockJS from "sockjs-client";
 
 export default function Home() {
   const [showCompose, setShowCompose] = useState(false);
@@ -15,6 +17,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [emails, setEmails] = useState([]); 
   const [pageInfo, setPageInfo] = useState({ size: 10, number: 0, totalElements: 0, totalPages: 0, });
+  const [stompClient, setStompClient] = useState(null);
+  let client = null
+  
   const LoadTags = async  () => {
     try {
       let token = await getValidAccessToken()
@@ -71,6 +76,50 @@ export default function Home() {
     setPageInfo({ size: 10, number: 0, totalElements: 0, totalPages: 0 });
     LoadTags();
     LoadMail(0, true);
+    let clientInstance;
+
+    const setupWebSocket = async () => {
+      const token = await getValidAccessToken();
+      const response = await fetch("http://localhost:8080/user/getInfor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      const userEmail = data.mail;
+
+      const socket = new SockJS("http://localhost:8080/ws");
+      clientInstance = new Client({
+        webSocketFactory: () => socket,
+        connectHeaders: { Authorization: `Bearer ${token}` },
+        onConnect: () => {
+          console.log("✅ WebSocket connected"+` /topic/mail/inbox/${userEmail}`);
+          clientInstance.subscribe(`/topic/mail/inbox/${userEmail}`, (message) => {
+            const mail = JSON.parse(message.body);
+            console.log(mail)
+            setEmails((prev) => [mail, ...prev]);
+          });
+        },
+        onStompError: (frame) => console.error("❌ STOMP error:", frame),
+        onWebSocketError: (err) => console.error("❌ WebSocket error:", err),
+      });
+
+      clientInstance.activate();
+      setStompClient(clientInstance);
+    };
+
+    setupWebSocket();
+
+    // 🧹 Cleanup khi rời trang
+    return () => {
+      if (clientInstance) {
+        console.log("❌ Disconnecting WebSocket...");
+        clientInstance.deactivate();
+      }
+    };
   }, []);
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;

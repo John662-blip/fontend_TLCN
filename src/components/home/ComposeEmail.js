@@ -1,28 +1,78 @@
 "use client";
 import { useState } from "react";
-
+import { getValidAccessToken } from "@/untils/getToken";
+import Swal from "sweetalert2";
 export default function ComposeEmail({ onClose }) {
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState([]);
+  const [isSending, setIsSending] = useState(false);
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-  const handleSend = (e) => {
+
+  const handleSend = async (e) => {
     e.preventDefault();
+    setIsSending(true);
 
-    console.log("Sending email:", { to, subject, body, attachments });
+    const formData = new FormData();
+    formData.append("to", to);
+    formData.append("subject", subject);
+    formData.append("body", body);
 
-    alert(`Email sent to ${to}!`);
+    attachments.forEach((file) => {
+      formData.append("attachments", file);
+    });
 
-    setTo("");
-    setSubject("");
-    setBody("");
-    setAttachments([]);
+    try {
+      const token = await getValidAccessToken()
+
+      const response = await fetch("http://localhost:8080/mail/sent", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, 
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setTo("");
+        setSubject("");
+        setBody("");
+        setAttachments([]);
+        onClose();
+        Swal.fire("Thành công!", "Gửi thành công.", "success");
+      } else {
+         Swal.fire("Lỗi!", "Có lỗi xãy ra khi gửi", "error");
+         setIsSending(false);
+      }
+    } catch (error) {
+      console.log(error)
+      Swal.fire("Lỗi!", "Có lỗi xãy ra khi gửi", "error");
+      setIsSending(false);
+    }
   };
+
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    setAttachments((prev) => [...prev, ...files]);
+    const validFiles = [];
+    files.forEach((file) => {
+    if (file.size > MAX_FILE_SIZE) {
+    Swal.fire(
+        "File quá lớn!",
+        `${file.name} vượt quá dung lượng cho phép 5MB.`,
+          "warning"
+        );
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (validFiles.length > 0) {
+      setAttachments((prev) => [...prev, ...validFiles]);
+    }
   };
 
   const removeAttachment = (index) => {
@@ -116,9 +166,12 @@ export default function ComposeEmail({ onClose }) {
 
         <button
           type="submit"
-          className="self-end bg-indigo-500 text-white px-6 py-2 rounded-md hover:bg-indigo-600 transition"
+          disabled={isSending}
+          className={`self-end px-6 py-2 rounded-md transition text-white ${
+            isSending ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-500 hover:bg-indigo-600"
+          }`}
         >
-          Send
+          {isSending ? "Đang gửi..." : "Gửi"}
         </button>
       </form>
     </div>

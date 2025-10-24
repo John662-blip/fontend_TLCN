@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import ChangeTagModel from "./ChangeTagModel";
 import { getValidAccessToken } from "@/untils/getToken";
-import { useRouter } from "next/navigation";
+import { useRouter,usePathname } from "next/navigation";
 
 export default function Sidebar({
   onNewMail,
@@ -31,6 +31,7 @@ export default function Sidebar({
   const [openTagMenu, setOpenTagMenu] = useState(null);
   const [isOpenChangeTag, setIsOpenChangeTag] = useState(false);
   const [selectedTagId, setSelectedTagId] = useState(null);
+  const pathname = usePathname();
 
   const handleEditTag = (id) => {
     setSelectedTagId(id);
@@ -79,27 +80,29 @@ export default function Sidebar({
       Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
     }
   };
-   const handleSelectMenu = (menu) => {
-      switch (menu) {
-        case "inbox":
-          router.push("/")
-          break;
-
-        case "sent":
-          router.push("/sent-mails")
-          break;
-
-        case "tag":
-
-          break;
-        case "star":
-          router.push("/star")
-
-          break;
-        default: 
-        break;
+  const handleSelectMenu = (menu) => {
+    const routes = {
+      inbox: "/",
+      sent: "/sent-mails",
+      star: "/star",
+      tag: null, // Tag xử lý riêng phía dưới
     };
-}
+
+    const target = routes[menu];
+
+    if (menu === "tag") {
+      // xử lý tag riêng bằng handleSelectTag
+      return;
+    }
+
+    if (pathname === target) {
+      // Nếu đang ở đúng route -> refresh trang
+      router.refresh();
+    } else {
+      // Nếu khác route -> chuyển trang
+      router.push(target);
+    }
+  };
 
  
 

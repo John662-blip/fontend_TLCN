@@ -125,7 +125,7 @@ export default function Sidebar({
     <>
       <nav
         className={`flex flex-col bg-gray-900 text-white transition-all duration-300 ${
-          collapsed ? "w-20" : "w-90"
+          collapsed ? "w-20" : "w-80"
         } px-3 py-4 select-none h-[calc(100vh-80px)] relative shadow-lg`}
       >
         {!collapsed && (

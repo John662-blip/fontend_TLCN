@@ -6,11 +6,36 @@ import ComposeEmail from "@/components/home/ComposeEmail";
 import { useState,useEffect,use } from "react";
 import AddTagModal from "@/components/home/AddTagModal";
 import { getValidAccessToken } from "@/untils/getToken";
-
 export default function MailPage({ params }) {
+  const { id } = use(params)
   const [showCompose, setShowCompose] = useState(false);
   const [showAddTag, setShowAddTag] = useState(false);
   const [tag,setTag] = useState([])
+  const [isShow,setShow]= useState(false)
+  const CheckShow = async () => {
+    try {
+      let token = await getValidAccessToken();
+      const response = await fetch(`http://localhost:8080/mail/checkHasMailById?id=${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json(); // data sẽ là true/false
+        setShow(data); // set state dựa trên kết quả server
+      } else {
+        setShow(false); // nếu lỗi, mặc định ko hiển thị
+        console.log("Lỗi từ server:", response.status);
+      }
+    } catch (error) {
+      setShow(false);
+      console.log("Lỗi khi gọi API:", error);
+    }
+  };
+
   const LoadTags = async  () => {
     try {
       let token = await getValidAccessToken()
@@ -32,6 +57,7 @@ export default function MailPage({ params }) {
   };
   useEffect(() => {
       LoadTags();
+      CheckShow()
       },[]);
   
   return (
@@ -48,7 +74,13 @@ export default function MailPage({ params }) {
         <div className="flex-grow flex flex-col h-full overflow-hidden">
         {/* Scroll riêng cho MailDetail */}
         <div className="flex-1 overflow-y-auto ">
-          <MailDetail params={params} />
+          {isShow ? (
+          <MailDetail id={id} />
+          ) : (
+            <div className="flex justify-center items-center h-full text-red-600 text-xl">
+              Mail không tồn tại hoặc bạn không có quyền truy cập.
+            </div>
+          )}
         </div>
       </div>
         {showCompose && (

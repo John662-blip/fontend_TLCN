@@ -10,11 +10,82 @@ import {
 import Link from "next/link";
 import ReplyBox from "./ReplyBox";
 import ForwardBox from "./ForwardBox";
+import { useEffect } from "react";
+import { getValidAccessToken } from "@/untils/getToken";
+import { formatDate } from "@/untils/formatDate";
 
-export default function MailDetail({ params }) {
-  // const id = params?.id ?? "unknown-id"; // Truy cập trực tiếp params.id
+export default function MailDetail({ id }) {
+  const [email,setEmail] = useState({
+    content : "",
+    createAt:"",
+    subject:"",
+    attachments:[]
+  })
+  const [inforUser,setInforUser] = useState(
+    {
+    userTo: {
+        mail: "",
+        name: "",
+        avatar: ""
+    },
+    userFrom: {
+        mail: "",
+        name: "",
+        avatar: ""
+    }
+}
+  )
+  const LoadMail = async ()=>{
+    try {
+      let token = await getValidAccessToken();
+      const response = await fetch(`http://localhost:8080/mail/${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
 
-  // Demo email (nội dung dài để kiểm tra cuộn)
+      if (response.ok) {
+        const data = await response.json(); // data sẽ là true/false
+        setEmail({
+          content : data.content,
+          createAt:formatDate(data.createAt),
+          subject: data.subject,
+          attachments:[]
+        })
+      } else {
+        console.log("Lỗi từ server:", response.status);
+      }
+    } catch (error) {
+      console.log("Lỗi khi gọi API:", error);
+    }
+  }
+  const LoadUser = async ()=>{
+    try {
+      let token = await getValidAccessToken();
+      const response = await fetch(`http://localhost:8080/user/getInforUserFromIdMailRespose?idMail=${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json(); // data sẽ là true/false
+        setInforUser(data)
+      } else {
+        console.log("Lỗi từ server:", response.status);
+      }
+    } catch (error) {
+      console.log("Lỗi khi gọi API:", error);
+    }
+  }
+  useEffect(() => {
+    LoadMail(),
+    LoadUser()
+  },[]);
   const mail = {
     subject: "Meeting Reminder — Project Sync",
     senderName: "Boss Example",
@@ -119,7 +190,7 @@ export default function MailDetail({ params }) {
           <div className="flex-1 overflow-y-auto">
             {/* HEADER */}
             <div className="px-6 py-5 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-              <h1 className="text-2xl font-semibold text-gray-900">{mail.subject}</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">{email.subject}</h1>
               <button
                 onClick={() => setShowRelated((s) => !s)}
                 className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm text-gray-700"
@@ -133,16 +204,20 @@ export default function MailDetail({ params }) {
             <div className="px-6 py-4 flex justify-between items-start gap-4">
               <div className="flex items-start gap-4">
                 <img
-                  src={mail.senderAvatar}
-                  alt={mail.senderName}
+                  src={"http://localhost:8080/public/image/"+inforUser.userFrom.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                  alt={inforUser.userFrom.name || "User"}
                   className="w-12 h-12 rounded-full object-cover border"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null; 
+                    e.currentTarget.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png"; 
+                  }}
                 />
                 <div>
                   <div className="font-medium text-gray-900">
-                    {mail.senderName}{" "}
-                    <span className="text-gray-500 font-normal">&lt;{mail.senderEmail}&gt;</span>
+                    {inforUser.userFrom.name}{" "}
+                    <span className="text-gray-500 font-normal">&lt;{inforUser.userFrom.mail}&gt;</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">to me • {mail.time}</div>
+                  <div className="text-xs text-gray-500 mt-1">to {inforUser.userTo.name} <span className="text-gray-500 font-normal">&lt;{inforUser.userTo.mail}&gt;</span> • {email.createAt}</div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -172,7 +247,25 @@ export default function MailDetail({ params }) {
               </div>
             </div>
 
-            {/* SMART SUMMARY */}
+            {/* BODY */}
+            <div className="px-6 py-6 text-gray-800 whitespace-pre-line leading-relaxed">{email.content}</div>
+
+            {/* ATTACHMENTS */}
+            {email.attachments.length > 0 && (
+              <div className="px-6 py-4 border-t flex flex-wrap gap-2">
+                {email.attachments.map((file, idx) => (
+                  <a
+                    key={idx}
+                    href={"file.url"}
+                    className="inline-flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm hover:bg-gray-200"
+                  >
+                    <Paperclip size={14} />
+                    {file.name}
+                  </a>
+                ))}
+              </div>
+            )}
+             {/* SMART SUMMARY */}
             {showSummary && (
               <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
                 <div className="flex justify-between items-start">
@@ -184,25 +277,6 @@ export default function MailDetail({ params }) {
                   </button>
                 </div>
                 <p className="mt-2 text-gray-700 leading-relaxed">{summaryContent}</p>
-              </div>
-            )}
-
-            {/* BODY */}
-            <div className="px-6 py-6 text-gray-800 whitespace-pre-line leading-relaxed">{mail.body}</div>
-
-            {/* ATTACHMENTS */}
-            {mail.attachments.length > 0 && (
-              <div className="px-6 py-4 border-t flex flex-wrap gap-2">
-                {mail.attachments.map((file, idx) => (
-                  <a
-                    key={idx}
-                    href={file.url}
-                    className="inline-flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm hover:bg-gray-200"
-                  >
-                    <Paperclip size={14} />
-                    {file.name}
-                  </a>
-                ))}
               </div>
             )}
 
@@ -246,7 +320,7 @@ export default function MailDetail({ params }) {
                   onCancel={() => setIsReplyOpen(false)}
                   refreshSuggestions={refreshSuggestions}
                   suggestions={suggestions}
-                  defaultBody={`---------- Re: message ----------\nFrom: ${mail.senderName} <${mail.senderEmail}>\nSubject: ${mail.subject}\nDate: ${mail.time}\nTo: ${mail.to}\n\n${mail.body}\n\n-------------------------------\n`}
+                  defaultBody={`---------- Re: message ----------\nFrom: ${inforUser.userFrom.name}<${inforUser.userFrom.mail}> \nSubject: ${email.subject}\nDate: ${email.createAt}\nTo: ${inforUser.userTo.name}\n\n${email.content}\n\n-------------------------------\n`}
                 />
               </div>
             )}
@@ -261,7 +335,7 @@ export default function MailDetail({ params }) {
                   onAttach={(e) => onAttachFiles(e, "forward")}
                   onRemove={(i) => removeFile("forward", i)}
                   onCancel={() => setIsForwardOpen(false)}
-                  defaultBody={`---------- Forwarded message ----------\nFrom: ${mail.senderName} <${mail.senderEmail}>\nSubject: ${mail.subject}\nDate: ${mail.time}\nTo: ${mail.to}\n\n${mail.body}\n\n-------------------------------\n`}
+                  defaultBody={`---------- Forwarded message ----------\nFrom: ${inforUser.userFrom.name} <${inforUser.userFrom.mail}>\nSubject: ${email.subject}\nDate: ${email.createAt}\nTo: ${inforUser.userTo.mail}\n\n${email.content}\n\n-------------------------------\n`}
                 />
               </div>
             )}

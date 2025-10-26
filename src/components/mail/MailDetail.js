@@ -52,8 +52,9 @@ export default function MailDetail({ id }) {
           content : data.content,
           createAt:formatDate(data.createAt),
           subject: data.subject,
-          attachments:[]
+          attachments:data.attach_Files
         })
+        
       } else {
         console.log("Lỗi từ server:", response.status);
       }
@@ -176,6 +177,33 @@ export default function MailDetail({ id }) {
   };
 
   const toggleSummary = () => setShowSummary((s) => !s);
+  const handleDowload = async (name)=>{
+    try {
+      let token = await getValidAccessToken();
+      const response = await fetch(`http://localhost:8080/download/${encodeURIComponent(name)}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name; 
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.log("Lỗi từ server:", response.status);
+      }
+    } catch (error) {
+      console.log("Lỗi khi gọi API:", error);
+    }
+  }
 
   return (
     <div className="h-[calc(100vh-76px)] bg-gray-100 flex">
@@ -256,11 +284,11 @@ export default function MailDetail({ id }) {
                 {email.attachments.map((file, idx) => (
                   <a
                     key={idx}
-                    href={"file.url"}
-                    className="inline-flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm hover:bg-gray-200"
+                    onClick={()=>handleDowload(file)}
+                    className="inline-flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
                   >
                     <Paperclip size={14} />
-                    {file.name}
+                    {file}
                   </a>
                 ))}
               </div>

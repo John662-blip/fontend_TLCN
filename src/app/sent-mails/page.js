@@ -98,8 +98,11 @@ export default function sent_mails() {
           console.log("✅ WebSocket connected"+` /topic/mail/sent/${userEmail}`);
           clientInstance.subscribe(`/topic/mail/inbox/${userEmail}`, (message) => {
             const mail = JSON.parse(message.body);
-            console.log(mail)
-            setEmails((prev) => [mail, ...prev]);
+            setEmails((prev) => {
+              const exists = prev.some((m) => m.id === mail.id);
+              if (exists) return prev;
+              return [mail, ...prev];
+            });
           });
         },
         onStompError: (frame) => console.error("❌ STOMP error:", frame),
@@ -122,12 +125,12 @@ export default function sent_mails() {
   }, []);
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
-    if (scrollHeight - scrollTop === clientHeight) {
+    if (scrollHeight - scrollTop <= clientHeight + 5) { 
       if (pageInfo.number + 1 < pageInfo.totalPages) {
         LoadMail(pageInfo.number + 1); 
       }
     }
-  };
+};
 
   return (
     <div className="bg-[#f1f3f4] min-h-screen flex flex-col">
@@ -142,10 +145,10 @@ export default function sent_mails() {
         
         />
       {/* //Sửa nội dung trong này  */}
-      <div className="flex-grow flex flex-col h-full overflow-hidden"
-        onScroll={handleScroll}
+      <div
+        className="flex-grow flex flex-col h-full ml-20"
       >
-        <EmailList emails={emails} tags = {tag}/>
+        <EmailList handleScroll={handleScroll} emails={emails} tags={tag} type={1} />
         {loading && <p className="text-center py-2">Đang tải...</p>}
       </div>
       {/* //Sửa nội dung */}

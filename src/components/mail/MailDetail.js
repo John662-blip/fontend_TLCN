@@ -47,7 +47,7 @@ export default function MailDetail({ id }) {
       });
 
       if (response.ok) {
-        const data = await response.json(); // data sẽ là true/false
+        const data = await response.json(); 
         setEmail({
           content : data.content,
           createAt:formatDate(data.createAt),
@@ -87,32 +87,7 @@ export default function MailDetail({ id }) {
     LoadMail(),
     LoadUser()
   },[]);
-  const mail = {
-    subject: "Meeting Reminder — Project Sync",
-    senderName: "Boss Example",
-    senderEmail: "boss@example.com",
-    senderAvatar: "https://randomuser.me/api/portraits/men/75.jpg",
-    time: "24 thg 10 2025, 10:05",
-    to: "you@example.com",
-    body: `Hi team,
-
-    This is a quick reminder about our sync meeting tomorrow at 10:00 AM in the main conference room.
-
-    Agenda:
-    - Project updates
-    - Timeline review
-    - Open discussion
-
-    Thanks,
-    Boss
-
-    `, // Lặp lại nội dung để tạo nội dung dài
-        attachments: [
-          { name: "agenda.pdf", url: "#" },
-          { name: "timeline.xlsx", url: "#" },
-        ],
-      };
-
+ 
   const relatedMails = [
     {
       id: "r1",
@@ -177,7 +152,7 @@ export default function MailDetail({ id }) {
   };
 
   const toggleSummary = () => setShowSummary((s) => !s);
-  const handleDowload = async (name)=>{
+  const handleDowload = async (name,fileName)=>{
     try {
       let token = await getValidAccessToken();
       const response = await fetch(`http://localhost:8080/download/${encodeURIComponent(name)}`, {
@@ -192,7 +167,7 @@ export default function MailDetail({ id }) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = name; 
+        a.download = fileName; 
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -207,7 +182,8 @@ export default function MailDetail({ id }) {
 
   return (
     <div className="h-[calc(100vh-76px)] bg-gray-100 flex">
-      <div className="flex-1 mx-auto max-w-6xl flex bg-white rounded-xl shadow overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 bottom-0 bg-white z-40 flex overflow-hidden ml-20">
+
         {/* MAIL DETAIL */}
         <div
           className={`flex-1 flex flex-col h-[calc(100vh-76px)] overflow-hidden transition-all duration-300 ${
@@ -284,11 +260,11 @@ export default function MailDetail({ id }) {
                 {email.attachments.map((file, idx) => (
                   <a
                     key={idx}
-                    onClick={()=>handleDowload(file)}
+                    onClick={()=>handleDowload(file.storagePath,file.fileName)}
                     className="inline-flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
                   >
                     <Paperclip size={14} />
-                    {file}
+                    {file.fileName}
                   </a>
                 ))}
               </div>

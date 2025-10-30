@@ -96,8 +96,9 @@ export default function sent_mails() {
         connectHeaders: { Authorization: `Bearer ${token}` },
         onConnect: () => {
           console.log("✅ WebSocket connected"+` /topic/mail/sent/${userEmail}`);
-          clientInstance.subscribe(`/topic/mail/inbox/${userEmail}`, (message) => {
+          clientInstance.subscribe(`/topic/mail/sent/${userEmail}`, (message) => {
             const mail = JSON.parse(message.body);
+            console.log(mail)
             setEmails((prev) => {
               const exists = prev.some((m) => m.id === mail.id);
               if (exists) return prev;
@@ -130,7 +131,7 @@ export default function sent_mails() {
         LoadMail(pageInfo.number + 1); 
       }
     }
-};
+  };
 
   return (
     <div className="bg-[#f1f3f4] min-h-screen flex flex-col">

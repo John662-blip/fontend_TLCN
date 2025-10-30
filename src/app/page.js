@@ -99,6 +99,7 @@ export default function Home() {
           console.log("✅ WebSocket connected"+` /topic/mail/inbox/${userEmail}`);
           clientInstance.subscribe(`/topic/mail/inbox/${userEmail}`, (message) => {
             const mail = JSON.parse(message.body);
+            console.log(mail)
             setEmails((prev) => {
               const exists = prev.some((m) => m.id === mail.id);
               if (exists) return prev;

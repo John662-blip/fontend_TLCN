@@ -100,7 +100,11 @@ export default function Home() {
           clientInstance.subscribe(`/topic/mail/inbox/${userEmail}`, (message) => {
             const mail = JSON.parse(message.body);
             console.log(mail)
-            setEmails((prev) => [mail, ...prev]);
+            setEmails((prev) => {
+              const exists = prev.some((m) => m.id === mail.id);
+              if (exists) return prev;
+              return [mail, ...prev];
+            });
           });
         },
         onStompError: (frame) => console.error("❌ STOMP error:", frame),
@@ -123,9 +127,9 @@ export default function Home() {
   }, []);
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
-    if (scrollHeight - scrollTop === clientHeight) {
+    if (scrollHeight - scrollTop <= clientHeight + 5) { 
       if (pageInfo.number + 1 < pageInfo.totalPages) {
-        LoadMail(pageInfo.number + 1); // load trang tiếp theo
+        LoadMail(pageInfo.number + 1); 
       }
     }
   };
@@ -142,10 +146,9 @@ export default function Home() {
        activeMenu="inbox"
         />
       {/* //Sửa nội dung trong này  */}
-      <div className="flex-grow flex flex-col h-full overflow-hidden"
-        onScroll={handleScroll}
+      <div className="flex-grow flex flex-col h-full overflow-hidden ml-20"
       >
-        <EmailList emails={emails} tags = {tag}/>
+        <EmailList emails={emails} tags = {tag} handleScroll={handleScroll}/>
         {loading && <p className="text-center py-2">Đang tải...</p>}
       </div>
       {/* //Sửa nội dung */}

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Star, StarOff, MoreVertical, X } from "lucide-react";
 import Swal from "sweetalert2";
 import { getValidAccessToken } from "@/untils/getToken";
-import { useRouter } from "next/navigation";
+import { useRouter,usePathname  } from "next/navigation";
 
 function Tag({ name, onRemove }) {
   return (
@@ -24,16 +24,17 @@ function Tag({ name, onRemove }) {
   );
 }
 
-export default function EmailItem({ email, tagAll }) {
+export default function EmailItem({ email, tagAll ,type}) {
   const router = useRouter();
+  const pathname = usePathname(); 
+  const isSentMail = pathname === "/sent-mails";
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [tags, setTags] = useState(email.tags ?? []);
   const [newTagId, setNewTagId] = useState("");
   const [starred, setStarred] = useState(email.type === 0);
-  const unread = email.isUnread;
-
+  const unread = isSentMail ? false : !email.isRead;
   const getTagNameById = (id) => {
     const foundTag = tagAll.find((t) => t.id === id);
     return foundTag ? foundTag.key : "Không rõ";
@@ -98,8 +99,29 @@ export default function EmailItem({ email, tagAll }) {
         Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
       }
     } catch (error) {
-      console.error("Lỗi ", error);
+      console.log("Lỗi ", error);
       Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
+    }
+  };
+  const handleClickStar = async (idMail) => {
+    try {
+      const token = await getValidAccessToken();
+      const response = await fetch(
+        `http://localhost:8080/mail/${idMail}/important`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          }
+        }
+      );
+      if (response.ok) {
+        setStarred(!starred)
+      } else {
+      }
+    } catch (error) {
+      console.log("Lỗi ", error);
     }
   };
 
@@ -108,15 +130,15 @@ export default function EmailItem({ email, tagAll }) {
   return (
     <li
       onClick={() => !editing && router.push(`/mail/${email.id}`)}
-      className={`relative group flex items-start px-4 py-3 mb-2 rounded-lg cursor-pointer border transition-all duration-200
-      ${unread ? "bg-indigo-50 border-indigo-200" : "bg-white border-gray-200 hover:bg-gray-50"}
+      className={`relative group flex items-start px-4 py-3 mb-2 rounded-lg cursor-pointer border-2 transition-all duration-200
+      ${unread ? "border-indigo-400 bg-indigo-50" : "border-transparent bg-white hover:bg-gray-50"}
       hover:shadow-md`}
     >
       {/* Left star icon */}
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setStarred(!starred);
+          handleClickStar(email.id)
         }}
         className="text-gray-400 hover:text-yellow-500 mr-3"
       >
@@ -131,8 +153,23 @@ export default function EmailItem({ email, tagAll }) {
       <div className="flex flex-col flex-grow">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-800 truncate max-w-[200px]">
-            {email.userTo}
+          <span className="text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis max-w-[350px]">
+            {type === 0 ? (
+              <>
+                {email.userFromName}{" "}
+                <span className="text-gray-500">&lt;{email.userFrom}&gt;</span>
+              </>
+            ) : type === 1 ? (
+              <>
+                Đến : {email.userToName}{" "}
+                <span className="text-gray-500">&lt;{email.userTo}&gt;</span>
+              </>
+            ) : (
+              <>
+                {email.userFromName}{" "}
+                <span className="text-gray-500">&lt;{email.userFrom}&gt;</span>
+              </>
+            )}
           </span>
 
           <div className="flex items-center gap-3">
@@ -169,9 +206,16 @@ export default function EmailItem({ email, tagAll }) {
           </div>
         </div>
 
-        {/* Subject */}
-        <p className="text-sm font-medium text-gray-900 truncate">
-          {email.subject}
+       <p className="text-sm flex items-center text-gray-900 overflow-hidden min-w-0">
+          {/* SUBJECT - ưu tiên tối đa */}
+          <span className="font-medium overflow-hidden text-ellipsis whitespace-nowrap flex-shrink-0">
+            {email.subject}
+          </span>
+
+          {/* CONTENT - chỉ chiếm phần còn lại */}
+          <span className="text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap flex-1 ml-2 min-w-0">
+            — {email.content}
+          </span>
         </p>
 
         {/* Tags */}

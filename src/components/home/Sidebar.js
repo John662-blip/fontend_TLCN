@@ -27,7 +27,7 @@ export default function Sidebar({
   setActiveTagId,
 }) {
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [openTagMenu, setOpenTagMenu] = useState(null);
   const [isOpenChangeTag, setIsOpenChangeTag] = useState(false);
   const [selectedTagId, setSelectedTagId] = useState(null);
@@ -124,10 +124,11 @@ export default function Sidebar({
   return (
     <>
       <nav
-        className={`flex flex-col bg-gray-900 text-white transition-all duration-300 ${
-          collapsed ? "w-20" : "w-80"
-        } px-3 py-4 select-none h-[calc(100vh-80px)] relative shadow-lg`}
-      >
+  className={`fixed left-0 top-19 h-[calc(100vh-80px)] bg-gray-900 text-white
+              transition-all duration-300 ${collapsed ? "w-20" : "w-80"} px-3 py-4 shadow-lg z-50`}
+  onMouseEnter={() => setCollapsed(false)}
+  onMouseLeave={() => setCollapsed(true)}
+>
         {!collapsed && (
           <button
             onClick={onNewMail}
@@ -200,13 +201,6 @@ export default function Sidebar({
             </ul>
           </div>
         )}
-
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute bottom-4 right-2 p-2 text-gray-400 hover:text-white rounded-full bg-gray-800 hover:bg-gray-700 transition"
-        >
-          {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-        </button>
       </nav>
 
       {isOpenChangeTag && (

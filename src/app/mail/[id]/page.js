@@ -73,7 +73,7 @@ export default function MailPage({ params }) {
                 />
         <div className="flex-grow flex flex-col h-full overflow-hidden">
         {/* Scroll riêng cho MailDetail */}
-        <div className="flex-1 overflow-y-auto ">
+        <div className="flex-1 overflow-y-auto ml-20">
           {isShow ? (
           <MailDetail id={id} />
           ) : (

@@ -41,7 +41,6 @@ export const refreshAccessToken = async () => {
       sameSite: "Strict",
     });
 
-    console.log("🔁 Access token mới:", data.access_token);
     return data.access_token;
   } catch (error) {
     console.error("🔥 Lỗi khi gọi API refresh:", error);

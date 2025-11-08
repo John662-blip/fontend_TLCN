@@ -25,5 +25,5 @@ export function middleware(req) {
 //   ],
 // };
 export const config = {
-  matcher: ["/", "/login","/profile","/email-summary-sidebar","/sent-mails","/star","/mail/:path*"],
+  matcher: ["/", "/login","/profile","/email-summary-sidebar","/sent-mails","/star","/mail/:path*","/admin"],
 };

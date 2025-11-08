@@ -60,11 +60,11 @@ export default function ComposeEmail({ onClose }) {
     const validFiles = [];
     files.forEach((file) => {
     if (file.size > MAX_FILE_SIZE) {
-    Swal.fire(
-        "File quá lớn!",
-        `${file.name} vượt quá dung lượng cho phép 5MB.`,
-          "warning"
-        );
+      Swal.fire(
+          "File quá lớn!",
+          `Tổng file vượt quá dung lượng cho phép 5MB.`,
+            "warning"
+          );
       } else {
         validFiles.push(file);
       }

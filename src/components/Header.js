@@ -27,9 +27,9 @@ export default function Header() {
   </div>
 
   {/* Center */}
-  <div className="flex-[3] flex justify-center">
+  {/* <div className="flex-[3] flex justify-center">
     <SearchBar />
-  </div>
+  </div> */}
 
   {/* Right */}
   <div className="flex-1 flex justify-end">

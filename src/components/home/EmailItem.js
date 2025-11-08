@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Star, StarOff, MoreVertical, X } from "lucide-react";
 import Swal from "sweetalert2";
 import { getValidAccessToken } from "@/untils/getToken";
-import { useRouter,usePathname  } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 function Tag({ name, onRemove }) {
   return (
@@ -12,7 +12,7 @@ function Tag({ name, onRemove }) {
       {onRemove && (
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Ngăn click nổi lên li
+            e.stopPropagation();
             onRemove();
           }}
           className="ml-1 hover:text-red-600"
@@ -24,17 +24,26 @@ function Tag({ name, onRemove }) {
   );
 }
 
-export default function EmailItem({ email, tagAll ,type}) {
+export default function EmailItem({ email, tagAll, type }) {
   const router = useRouter();
-  const pathname = usePathname(); 
+  const pathname = usePathname();
   const isSentMail = pathname === "/sent-mails";
+
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [tags, setTags] = useState(email.tags ?? []);
+  const [tags, setTags] = useState(() => {
+    if (email.tags && Array.isArray(email.tags)) {
+      return email.tags.filter((tag) =>
+        tagAll.some((t) => t.id === tag)
+      );
+    }
+    return [];
+  });
   const [newTagId, setNewTagId] = useState("");
   const [starred, setStarred] = useState(email.type === 0);
   const unread = isSentMail ? false : !email.isRead;
+
   const getTagNameById = (id) => {
     const foundTag = tagAll.find((t) => t.id === id);
     return foundTag ? foundTag.key : "Không rõ";
@@ -103,6 +112,7 @@ export default function EmailItem({ email, tagAll ,type}) {
       Swal.fire("Lỗi!", "Có lỗi xảy ra.", "error");
     }
   };
+
   const handleClickStar = async (idMail) => {
     try {
       const token = await getValidAccessToken();
@@ -113,13 +123,10 @@ export default function EmailItem({ email, tagAll ,type}) {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
-          }
+          },
         }
       );
-      if (response.ok) {
-        setStarred(!starred)
-      } else {
-      }
+      if (response.ok) setStarred(!starred);
     } catch (error) {
       console.log("Lỗi ", error);
     }
@@ -132,15 +139,15 @@ export default function EmailItem({ email, tagAll ,type}) {
       onClick={() => !editing && router.push(`/mail/${email.id}`)}
       className={`relative group flex items-start px-4 py-3 mb-2 rounded-lg cursor-pointer border-2 transition-all duration-200
       ${unread ? "border-indigo-400 bg-indigo-50" : "border-transparent bg-white hover:bg-gray-50"}
-      hover:shadow-md`}
+      hover:shadow-md w-full overflow-hidden`}
     >
       {/* Left star icon */}
       <button
         onClick={(e) => {
           e.stopPropagation();
-          handleClickStar(email.id)
+          handleClickStar(email.id);
         }}
-        className="text-gray-400 hover:text-yellow-500 mr-3"
+        className="text-gray-400 hover:text-yellow-500 mr-3 flex-shrink-0"
       >
         {starred ? (
           <Star className="fill-yellow-400 text-yellow-400" size={18} />
@@ -150,9 +157,9 @@ export default function EmailItem({ email, tagAll ,type}) {
       </button>
 
       {/* Main content */}
-      <div className="flex flex-col flex-grow">
+      <div className="flex flex-col flex-grow min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
           <span className="text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis max-w-[350px]">
             {type === 0 ? (
               <>
@@ -161,7 +168,7 @@ export default function EmailItem({ email, tagAll ,type}) {
               </>
             ) : type === 1 ? (
               <>
-                Đến : {email.userToName}{" "}
+                Đến: {email.userToName}{" "}
                 <span className="text-gray-500">&lt;{email.userTo}&gt;</span>
               </>
             ) : (
@@ -172,8 +179,8 @@ export default function EmailItem({ email, tagAll ,type}) {
             )}
           </span>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <span className="text-xs text-gray-500 whitespace-nowrap">
               {new Date(email.createAt).toLocaleString()}
             </span>
             <div className="relative">
@@ -188,7 +195,7 @@ export default function EmailItem({ email, tagAll ,type}) {
               </button>
               {menuOpen && (
                 <div
-                  onClick={(e) => e.stopPropagation()} // Chặn click ra ngoài li
+                  onClick={(e) => e.stopPropagation()}
                   className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-10 p-2"
                 >
                   <button
@@ -206,17 +213,15 @@ export default function EmailItem({ email, tagAll ,type}) {
           </div>
         </div>
 
-       <p className="text-sm flex items-center text-gray-900 overflow-hidden min-w-0">
-          {/* SUBJECT - ưu tiên tối đa */}
-          <span className="font-medium overflow-hidden text-ellipsis whitespace-nowrap flex-shrink-0">
-            {email.subject}
-          </span>
-
-          {/* CONTENT - chỉ chiếm phần còn lại */}
-          <span className="text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap flex-1 ml-2 min-w-0">
-            — {email.content}
-          </span>
-        </p>
+        {/* Subject + Content (1 dòng truncate) */}
+        <div className="flex items-center w-full mt-1">
+          <div className="flex-1 min-w-0">
+            <p className="truncate overflow-hidden whitespace-nowrap text-sm text-gray-900">
+              <span className="font-medium">{email.subject}</span>
+              <span className="text-gray-500 ml-2">— {email.content}</span>
+            </p>
+          </div>
+        </div>
 
         {/* Tags */}
         {(safeTags.length > 0 || editing) && (
@@ -229,7 +234,6 @@ export default function EmailItem({ email, tagAll ,type}) {
                   onRemove={editing ? () => handleRemoveTag(tagId) : null}
                 />
               ))}
-
               {!expanded && safeTags.length > 4 && (
                 <button
                   onClick={() => setExpanded(true)}
@@ -240,9 +244,11 @@ export default function EmailItem({ email, tagAll ,type}) {
               )}
             </div>
 
-            {/* Tag Editing */}
             {editing && (
-              <div className="mt-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="mt-2 flex items-center gap-2"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <select
                   value={newTagId}
                   onChange={(e) => setNewTagId(e.target.value)}

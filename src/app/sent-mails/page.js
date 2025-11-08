@@ -10,7 +10,7 @@ import { getValidAccessToken } from "@/untils/getToken";
 import { Client } from '@stomp/stompjs';
 import SockJS from "sockjs-client";
 
-export default function sent_mails() {
+export default function SentMails() {
   const [showCompose, setShowCompose] = useState(false);
   const [showAddTag, setShowAddTag] = useState(false);
   const [tag,setTag] = useState([])
@@ -147,7 +147,7 @@ export default function sent_mails() {
         />
       {/* //Sửa nội dung trong này  */}
       <div
-        className="flex-grow flex flex-col h-full ml-20"
+        className="flex-grow flex flex-col h-full overflow-hidden ml-20"
       >
         <EmailList handleScroll={handleScroll} emails={emails} tags={tag} type={1} />
         {loading && <p className="text-center py-2">Đang tải...</p>}

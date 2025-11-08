@@ -62,7 +62,7 @@ export default function MailPage({ params }) {
   
   return (
     <div className="bg-[#f1f3f4] min-h-screen flex flex-col">
-      <Header />
+      <Header className="sticky top-0 z-[10000]" />
       <main className="flex flex-grow overflow-hidden relative">
         <Sidebar
                onAddTag = {()=>setShowAddTag(true)} 
@@ -71,9 +71,9 @@ export default function MailPage({ params }) {
                LoadTags={() => LoadTags()}
                activeMenu="None"
                 />
-        <div className="flex-grow flex flex-col h-full overflow-hidden">
+        <div className="flex-grow flex flex-col h-full overflow-hidden ">
         {/* Scroll riêng cho MailDetail */}
-        <div className="flex-1 overflow-y-auto ml-20">
+        <div className="flex-1 overflow-y-auto ml-20  z-0">
           {isShow ? (
           <MailDetail id={id} />
           ) : (

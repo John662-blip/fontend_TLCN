@@ -1,8 +1,8 @@
 "use client";
-import { User, CalendarDays, LogOut } from "lucide-react";
+import { User, CalendarDays, LogOut,Shield  } from "lucide-react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-export default function UserSidebar({ onClose }) {
+export default function UserSidebar({ isAdmin,onClose }) {
   const router = useRouter();
   const logout = () => {
     Cookies.remove("access_token", { path: "/" });
@@ -13,12 +13,12 @@ export default function UserSidebar({ onClose }) {
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-white/30 backdrop-blur-sm z-40"
+        className="fixed inset-0 bg-white/30 backdrop-blur-sm z-[9998]"
         onClick={onClose}
       />
 
       {/* Sidebar */}
-      <div className="fixed top-0 right-0 w-72 h-full bg-white shadow-xl z-50 flex flex-col animate-slideIn">
+      <div className="fixed top-0 right-0 w-72 h-full bg-white shadow-xl z-[9999] flex flex-col animate-slideIn">
         {/* Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-800">Tùy chọn</h2>
@@ -45,6 +45,18 @@ export default function UserSidebar({ onClose }) {
                 <span>Tóm tắt sự kiện tháng này</span>
               </button>
             </li>
+            {/* ✅ Thêm mục quản lý tài khoản nếu isAdmin == 0 */}
+            {isAdmin === 0 && (
+              <li>
+                <button
+                  onClick={() => router.push("/admin")}
+                  className="flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                >
+                  <Shield className="w-5 h-5 text-purple-500" />
+                  <span>Quản lý tài khoản hệ thống</span>
+                </button>
+              </li>
+            )}
           </ul>
 
           {/* Divider */}

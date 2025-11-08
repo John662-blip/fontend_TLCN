@@ -8,7 +8,7 @@ import { useState,useEffect } from "react";
 import AddTagModal from "@/components/home/AddTagModal";
 import { getValidAccessToken } from "@/untils/getToken";
 
-export default function star() {
+export default function Star() {
   const [showCompose, setShowCompose] = useState(false);
   const [showAddTag, setShowAddTag] = useState(false);
   const [tag,setTag] = useState([])

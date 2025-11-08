@@ -31,6 +31,7 @@ export default function AddTagModal({ onClose, LoadTags }) {
       if (response.ok){
         LoadTags()
         onClose();
+        Swal.fire("Thành công!", "Nhãn đã được cập nhập", "success");
       }
       else{
         const data = await response.json();

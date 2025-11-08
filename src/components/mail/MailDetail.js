@@ -13,6 +13,7 @@ import ForwardBox from "./ForwardBox";
 import { useEffect } from "react";
 import { getValidAccessToken } from "@/untils/getToken";
 import { formatDate } from "@/untils/formatDate";
+import Swal from "sweetalert2";
 
 export default function MailDetail({ id }) {
   const [email,setEmail] = useState({
@@ -88,23 +89,7 @@ export default function MailDetail({ id }) {
     LoadUser()
   },[]);
  
-  const relatedMails = [
-    {
-      id: "r1",
-      subject: "Project Sync Notes",
-      sender: "Boss Example",
-      time: "22 thg 10",
-      preview: "Here are the meeting notes and key takeaways...",
-    },
-    {
-      id: "r2",
-      subject: "Timeline Adjustment for Sprint 3",
-      sender: "PM Alice",
-      time: "20 thg 10",
-      preview: "Due to delays, we’ll extend the testing phase by 2 days...",
-    },
-  ];
-
+  
   // States
   const [showSummary, setShowSummary] = useState(false);
   const [summaryContent] = useState(
@@ -117,25 +102,85 @@ export default function MailDetail({ id }) {
   const [replyFiles, setReplyFiles] = useState([]);
   const [forwardFiles, setForwardFiles] = useState([]);
   const [showRelated, setShowRelated] = useState(false);
+  const [relatedMails,setRelatedMails] = useState([]);
   const [suggestions, setSuggestions] = useState([
     "Cảm ơn bạn!",
     "Tôi sẽ kiểm tra và phản hồi sớm.",
     "Đã nhận được thông tin.",
     "Hẹn gặp bạn trong cuộc họp.",
   ]);
+  const handleClickshowRelated = async()=>{
+    try {
+      let token = await getValidAccessToken()
+      const response = await fetch(
+        `http://localhost:8080/ai/getMailsRelate?idMail=${id}&topk=${8}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.ok){
+        const data = await response.json();
+        setRelatedMails(data)
+      }
+      else{
+        const data = await response.json();
+        console.log("Lỗi ", data);
+      }
+    } catch (error) {
+      console.log("Lỗi ", error);
+    }
+  }
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
   // Handlers
   const onAttachFiles = (e, type) => {
     const files = Array.from(e.target.files);
-    if (type === "reply") setReplyFiles((prev) => [...prev, ...files]);
-    else setForwardFiles((prev) => [...prev, ...files]);
-    e.target.value = "";
+
+    // Lọc file >0 byte
+    const validFiles = files.filter(file => file.size > 0);
+    if (validFiles.length === 0) return;
+
+    if (type === "reply") {
+      const totalSize = [...replyFiles, ...validFiles].reduce((acc, f) => acc + f.size, 0);
+      if (totalSize > MAX_FILE_SIZE) {
+        Swal.fire(
+                "File quá lớn!",
+                `Tổng file vượt quá dung lượng cho phép 5MB.`,
+                  "warning"
+                );
+        return;
+      }
+      setReplyFiles(prev => [...prev, ...validFiles]);
+    } else {
+      const totalSize = [...forwardFiles, ...validFiles].reduce((acc, f) => acc + f.size, 0);
+      if (totalSize > MAX_FILE_SIZE) {
+        Swal.fire(
+                "File quá lớn!",
+                `Tổng file vượt quá dung lượng cho phép 5MB.`,
+                  "warning"
+                );
+        return;
+      }
+      setForwardFiles(prev => [...prev, ...validFiles]);
+    }
+
+    e.target.value = ""; // reset input
   };
 
   const removeFile = (type, idx) => {
     if (type === "reply")
       setReplyFiles((prev) => prev.filter((_, i) => i !== idx));
     else setForwardFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    const day = date.getDate().toString().padStart(2, '0'); // 2 chữ số
+    const month = date.getMonth() + 1; // JS month từ 0 → +1
+    return `${day} thg ${month}`; 
   };
 
   const refreshSuggestions = () => {
@@ -196,7 +241,10 @@ export default function MailDetail({ id }) {
             <div className="px-6 py-5 border-b flex justify-between items-center sticky top-0 bg-white z-10">
               <h1 className="text-2xl font-semibold text-gray-900">{email.subject}</h1>
               <button
-                onClick={() => setShowRelated((s) => !s)}
+                onClick={() => {
+                  handleClickshowRelated()
+                  setShowRelated((s) => !s)}
+                }
                 className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm text-gray-700"
               >
                 <Mail size={16} />
@@ -316,9 +364,13 @@ export default function MailDetail({ id }) {
             {isReplyOpen && (
               <div className="sticky bottom-0 bg-white z-10 px-6 py-4 border-t">
                 <ReplyBox
+                  email = {email}
+                  mailTo = {inforUser.userFrom.mail}
                   text={replyText}
                   setText={setReplyText}
+                  replyText = {replyText}
                   files={replyFiles}
+                  setReplyFiles = {setReplyFiles}
                   onAttach={(e) => onAttachFiles(e, "reply")}
                   onRemove={(i) => removeFile("reply", i)}
                   onCancel={() => setIsReplyOpen(false)}
@@ -336,9 +388,11 @@ export default function MailDetail({ id }) {
                   text={forwardText}
                   setText={setForwardText}
                   files={forwardFiles}
+                  setForwardFiles = {setForwardFiles}
                   onAttach={(e) => onAttachFiles(e, "forward")}
                   onRemove={(i) => removeFile("forward", i)}
                   onCancel={() => setIsForwardOpen(false)}
+                  email={email}
                   defaultBody={`---------- Forwarded message ----------\nFrom: ${inforUser.userFrom.name} <${inforUser.userFrom.mail}>\nSubject: ${email.subject}\nDate: ${email.createAt}\nTo: ${inforUser.userTo.mail}\n\n${email.content}\n\n-------------------------------\n`}
                 />
               </div>
@@ -358,8 +412,8 @@ export default function MailDetail({ id }) {
                   className="block px-4 py-3 border-b hover:bg-gray-100 transition"
                 >
                   <div className="text-sm font-medium text-gray-900 truncate">{m.subject}</div>
-                  <div className="text-xs text-gray-600">{m.sender} • {m.time}</div>
-                  <div className="text-xs text-gray-500 truncate mt-1">{m.preview}</div>
+                  <div className="text-xs text-gray-600">{m.userFromName} • {formatDate(m.createAt)}</div>
+                  <div className="text-xs text-gray-500 truncate mt-1">{m.content}</div>
                 </Link>
               ))}
             </div>

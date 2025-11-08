@@ -7,6 +7,7 @@ import { useEffect } from "react";
 
 export default function UserMenu() {
   const [open, setOpen] = useState(false);
+  const [isAdmin, setAdmin] = useState(2);
   const [imageUrl,setImageUrl] = useState("https://storage.googleapis.com/a1aa/image/e2e7fb5f-8572-4e94-79c4-ff78374b2214.jpg")
   const LoadImage = async () => {
       try {
@@ -21,7 +22,8 @@ export default function UserMenu() {
   
         if (response.ok) {
           const data = await response.json();
-  
+          setAdmin(data.role)
+
   
           setImageUrl("http://localhost:8080/public/image/" + data.avatar);
           console.log(imageUrl)
@@ -52,7 +54,7 @@ export default function UserMenu() {
           />
         </div>
       </button>
-      {open && <UserSidebar onClose={() => setOpen(false)} />}
+      {open && <UserSidebar isAdmin = {isAdmin} onClose={() => setOpen(false)} />}
     </div>
   );
 }

@@ -4,41 +4,108 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 dayjs.extend(isBetween);
-
-const mockEmails = [
-  { date: "2025-10-15", type: "HOP", content: "Triển khai kế hoạch Q4" },
-  { date: "2025-10-15", type: "KHACH_HANG", content: "Yêu cầu báo giá sản phẩm A" },
-  { date: "2025-10-16", type: "LIEN_HOAN", content: "Team building cuối năm" },
-  { date: "2025-10-16", type: "HOP", content: "Báo cáo tiến độ dự án" },
-  { date: "2025-10-17", type: "KHACH_HANG", content: "Gửi hợp đồng cho đối tác" }
-];
+import { getValidAccessToken } from "@/untils/getToken";
+import { useRef } from "react";
+import { useEffect } from "react";
+import API_CONFIG from "@/untils/Config";
 
 const typeStyles = {
-  HOP: "bg-blue-50 border-blue-300 text-blue-700",
-  LIEN_HOAN: "bg-yellow-50 border-yellow-300 text-yellow-700",
-  KHACH_HANG: "bg-green-50 border-green-300 text-green-700",
+  0: "bg-blue-50 border-blue-300 text-blue-700",
+  1: "bg-yellow-50 border-yellow-300 text-yellow-700",
+  2: "bg-green-50 border-green-300 text-green-700",
+};
+const categoryMap = {
+  0: "HỌP",
+  1: "NHIỆM VỤ",
+  2: "SỰ KIỆN VUI CHƠI"
 };
 
 export default function SummaryPage() {
   const router = useRouter();
-  const [filter, setFilter] = useState("ALL");
+  const [mails,setMails] = useState([]);
+  const [filter, setFilter] = useState("WEEK");
+  const handelLoadMail = async (range = "WEEK")=>{
+    try {
+      const token = await getValidAccessToken();
+      const response = await fetch(`http://localhost:8080/mail/filterMail`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          range: range
+        })
+      });
 
-  const filteredEmails = useMemo(() => {
-    const now = dayjs();
-    if (filter === "ALL") return mockEmails;
+      if (response.ok) {
+        const data = await response.json();
+        setMails(data)
+        console.log(data)
+        hasFetchedSummary.current = false
+      } 
+    
+    } catch (error) {
+      console.log("Lỗi ", error);
+    }
+  }
+  const hasFetchedSummary = useRef(false);
+  useEffect(() => {
+    if (mails.length > 0 && !hasFetchedSummary.current) {
+      handleLoadSummary();
+      hasFetchedSummary.current = true;
+    }
+  }, [mails]);
 
-    return mockEmails.filter((email) => {
-      const emailDate = dayjs(email.date);
-      if (filter === "WEEK") {
-        const startOfWeek = now.startOf("week");
-        const endOfWeek = now.endOf("week");
-        return emailDate.isBetween(startOfWeek, endOfWeek, null, "[]");
+  const handleLoadSummary = async()=>{
+    try {
+      let tg_mail = [];
+      for (let i = 0; i < mails.length; i++) {
+        const mail = mails[i];
+              
+        let content = `
+          Chủ đề : ${mail.subject}
+          Nội dung :
+          ${mail.content}
+          `.trim();
+        tg_mail.push(content);
       }
-      if (filter === "MONTH") {
-        return emailDate.month() === now.month() && emailDate.year() === now.year();
-      }
-    });
-  }, [filter]);
+      console.log(tg_mail)
+      if (tg_mail.length ==0) return
+      const token = await getValidAccessToken();
+      const response = await fetch(`${API_CONFIG.AI_URL}/summarize_batch_20`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          list_content: tg_mail
+        })
+      });
+
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data)
+        const updatedMails = mails.map((mail, idx) => ({
+          ...mail,
+          summary: data.list_summary[idx] || ""
+        }));
+        setMails(updatedMails);
+      } 
+    
+    } catch (error) {
+      console.log("Lỗi ", error);
+    }
+  }
+  const hasLoad = useRef(false);
+  useEffect(() => {
+    if (!hasLoad.current) {
+      handelLoadMail()
+      hasLoad.current = true;
+    }
+  },[]);
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -56,29 +123,41 @@ export default function SummaryPage() {
         <label className="mr-2 font-medium">Lọc theo:</label>
         <select
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={(e) => 
+          {
+            setFilter(e.target.value)
+            handelLoadMail(e.target.value)
+          }
+          }
           className="border px-3 py-2 rounded-md"
         >
-          <option value="ALL">Tất cả</option>
-          <option value="WEEK">Tuần này</option>
+          <option value="WEEK">7 ngày gần nhất</option>
           <option value="MONTH">Tháng này</option>
+          <option value="PREVIOUS_MONTH">Tháng trước</option>
         </select>
       </div>
 
       <div className="space-y-4">
-        {filteredEmails.length === 0 ? (
+        {mails.length === 0 ? (
           <div className="text-gray-500">Không có email nào</div>
         ) : (
-          filteredEmails.map((email, index) => {
-            const style = typeStyles[email.type] || "bg-gray-50 border-gray-300 text-gray-700";
+          mails.map((email, index) => {
+            const style = typeStyles[email.category] || "bg-gray-50 border-gray-300 text-gray-700";
             return (
               <div
-                key={index}
+                key={email.id}
                 className={`border rounded-lg p-4 shadow-sm ${style}`}
               >
-                <div className="text-sm text-gray-500 mb-1">📅 {email.date}</div>
-                <div className="font-semibold uppercase">{`[${email.type.replace("_", " ")}]`}</div>
-                <div className="text-gray-800 mt-1">{email.content}</div>
+                <div className="text-sm text-gray-500 mb-1">
+                  📅 {dayjs(email.createAt).format("DD/MM/YYYY HH:mm")}
+                </div>
+                <div className="font-semibold uppercase">{`[${categoryMap[email.category] || "KHÁC"}]`}</div>
+                <div className="text-lg font-bold text-gray-900 mb-1 cursor-pointer"
+                  onClick={()=>router.push(`/mail/${email.id}`)}
+                >{email.subject}</div>
+                <div className="text-gray-800 mt-1">
+                  {email.summary ? email.summary : "Đang load..."}
+                </div>
               </div>
             );
           })

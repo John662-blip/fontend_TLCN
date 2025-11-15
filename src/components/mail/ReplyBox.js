@@ -2,8 +2,11 @@ import { Paperclip, X, ArrowDownCircle, ChevronDown, ChevronUp } from "lucide-re
 import { useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { getValidAccessToken } from "@/untils/getToken";
+import API_CONFIG from "@/untils/Config";
 
 export default function ReplyBox({
+  inforUser,
+  isLoadSuggest,
   text,
   setText,
   replyText,
@@ -13,14 +16,72 @@ export default function ReplyBox({
   onCancel,
   suggestions,
   refreshSuggestions,
-  defaultBody = "", // nội dung thư trước
+  defaultBody = "", 
   mailTo,
   email,
   setReplyFiles
 }) {
   const textareaRef = useRef(null);
   const [showBody, setShowBody] = useState(false);
+  const [isGenReply, setGenReply] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const handleClickAction = async(action)=>{
+    setGenReply(true)
+    try {
+      setText("");
+      let token = await getValidAccessToken()
+      const response = await fetch(
+        `${API_CONFIG.AI_URL}/reply`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            action : action,
+            message: `Người gửi : ${inforUser.userFrom.name} <${inforUser.userFrom.mail}> \n Người Nhận : ${inforUser.userTo.name} <${inforUser.userTo.mail}> \n chủ đề :${email.subject}\n nội dung : ${email.content}` 
+          }),
+        }
+      );
+      if (response.ok){
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+
+          // Mỗi chunk có thể chứa nhiều dòng "data: ..."
+          const lines = chunk.split("\n").filter(line => line.trim().startsWith("data: "));
+
+          for (const line of lines) {
+            const jsonStr = line.replace("data: ", "").trim();
+            if (jsonStr === "[DONE]") continue; // Dòng kết thúc stream
+
+            try {
+              const dataObj = JSON.parse(jsonStr);
+              if (dataObj.reply) {
+                // Nối thêm text stream vào nội dung
+                setText(prev => prev + dataObj.reply + " ");
+              }
+            } catch (err) {
+              console.warn("Lỗi parse JSON:", jsonStr);
+            }
+          }
+        }
+
+      }
+      else{
+        const data = await response.json();
+        console.log("Lỗi ", data);
+      }
+    } catch (error) {
+      console.log("Lỗi ", error);
+    }
+    setGenReply(false)
+  }
 
   const handleFocus = () => {
     // Đưa con trỏ lên đầu
@@ -28,6 +89,7 @@ export default function ReplyBox({
       if (textareaRef.current) textareaRef.current.setSelectionRange(0, 0);
     }, 0);
   };
+
   const handleSend = async (e) => {
       e.preventDefault();
       setIsSending(true);
@@ -78,8 +140,13 @@ export default function ReplyBox({
           {suggestions.map((s, idx) => (
             <button
               key={idx}
-              onClick={() => setText((t) => t + s)}
-              className="px-3 py-1 bg-white border rounded-full text-xs hover:bg-gray-100 transition"
+              onClick={() => handleClickAction(s)}
+              disabled={isGenReply} 
+              className={`px-3 py-1 border rounded-full text-xs transition ${
+                isGenReply
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
+                  : "bg-white hover:bg-gray-100"
+              }`}
             >
               {s}
             </button>
@@ -87,7 +154,9 @@ export default function ReplyBox({
         </div>
         <button
           onClick={refreshSuggestions}
-          className="flex items-center gap-1 text-xs px-3 py-1 border rounded-md bg-white hover:bg-gray-100"
+          disabled={isLoadSuggest} 
+          className={`flex items-center gap-1 text-xs px-3 py-1 border rounded-md 
+            ${isLoadSuggest ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-100"}`}
         >
           <ArrowDownCircle size={14} /> Làm mới
         </button>

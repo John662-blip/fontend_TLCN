@@ -8,10 +8,6 @@ export default function AddTagModal({ onClose, LoadTags }) {
   const [description, setDescription] = useState("");
   const [autoLabel, setAutoLabel] = useState("off");
   const handleSave = async  () => {
-    if (description.trim().split(" ").length < 50) {
-      alert("Mô tả phải có tối thiểu 50 từ!");
-      return;
-    }
     let isAutoTagging = false 
     if (autoLabel == "on") isAutoTagging = true
     try {
@@ -73,7 +69,7 @@ export default function AddTagModal({ onClose, LoadTags }) {
         {/* Mô tả */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Mô tả (tối thiểu 50 từ)
+            Mô tả 
           </label>
           <textarea
             rows="4"

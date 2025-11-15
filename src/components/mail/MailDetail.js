@@ -14,6 +14,9 @@ import { useEffect } from "react";
 import { getValidAccessToken } from "@/untils/getToken";
 import { formatDate } from "@/untils/formatDate";
 import Swal from "sweetalert2";
+import Config from "@/untils/Config";
+import API_CONFIG from "@/untils/Config";
+import { useRef } from "react";
 
 export default function MailDetail({ id }) {
   const [email,setEmail] = useState({
@@ -23,18 +26,18 @@ export default function MailDetail({ id }) {
     attachments:[]
   })
   const [inforUser,setInforUser] = useState(
-    {
-    userTo: {
-        mail: "",
-        name: "",
-        avatar: ""
-    },
-    userFrom: {
-        mail: "",
-        name: "",
-        avatar: ""
-    }
-}
+  {
+      userTo: {
+          mail: "",
+          name: "",
+          avatar: ""
+      },
+      userFrom: {
+          mail: "",
+          name: "",
+          avatar: ""
+      }
+  }
   )
   const LoadMail = async ()=>{
     try {
@@ -84,17 +87,20 @@ export default function MailDetail({ id }) {
       console.log("Lỗi khi gọi API:", error);
     }
   }
+  const hasLoadedSuggestion = useRef(false);
   useEffect(() => {
-    LoadMail(),
-    LoadUser()
+    if (!hasLoadedSuggestion.current) {
+      LoadMail();
+      LoadUser();
+      handleReloadSuggestion();
+      handleClickshowRelated();
+      hasLoadedSuggestion.current = true;
+    }
   },[]);
  
   
   // States
   const [showSummary, setShowSummary] = useState(false);
-  const [summaryContent] = useState(
-    "Cuộc họp ngày mai lúc 10AM để thảo luận tiến độ dự án, timeline và các vấn đề mở."
-  );
   const [isReplyOpen, setIsReplyOpen] = useState(false);
   const [isForwardOpen, setIsForwardOpen] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -104,13 +110,101 @@ export default function MailDetail({ id }) {
   const [showRelated, setShowRelated] = useState(false);
   const [relatedMails,setRelatedMails] = useState([]);
   const [suggestions, setSuggestions] = useState([
-    "Cảm ơn bạn!",
-    "Tôi sẽ kiểm tra và phản hồi sớm.",
-    "Đã nhận được thông tin.",
-    "Hẹn gặp bạn trong cuộc họp.",
   ]);
+  const [isLoadSuggest,setLoadSugget] = useState(false)
+  const [summaryContent,setSummaryContent] = useState(
+    ""
+  );
+  const handleReloadSuggestion = async()=>{
+    try {
+      console.log("OK")
+      let token = await getValidAccessToken()
+      setLoadSugget(true)
+      const response = await fetch(
+        `${API_CONFIG.AI_URL}/suggest_action`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            subject: email.subject,
+            body: email.content 
+          }),
+        }
+      );
+      if (response.ok){
+        const data = await response.json();
+        setSuggestions(Array.isArray(data?.arguments?.actions) ? data.arguments.actions : []);
+        setLoadSugget(false)
+      }
+      else{
+        const data = await response.json();
+        setLoadSugget(false)
+        console.log("Lỗi ", data);
+      }
+    } catch (error) {
+      setLoadSugget(false)
+      console.log("Lỗi ", error);
+    }
+  }
+  const handleSumaryClick = async()=>{
+    try {
+      setSummaryContent("");
+      let token = await getValidAccessToken()
+      const response = await fetch(
+        `${API_CONFIG.AI_URL}/summarize`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: `chủ đề :${email.subject}\n nội dung : ${email.content}` 
+          }),
+        }
+      );
+      if (response.ok){
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+
+          // Mỗi chunk có thể chứa nhiều dòng "data: ..."
+          const lines = chunk.split("\n").filter(line => line.trim().startsWith("data: "));
+
+          for (const line of lines) {
+            const jsonStr = line.replace("data: ", "").trim();
+            if (jsonStr === "[DONE]") continue; // Dòng kết thúc stream
+
+            try {
+              const dataObj = JSON.parse(jsonStr);
+              if (dataObj.summary) {
+                // Nối thêm text stream vào nội dung
+                setSummaryContent(prev => prev + dataObj.summary + " ");
+              }
+            } catch (err) {
+              console.warn("Lỗi parse JSON:", jsonStr);
+            }
+          }
+        }
+
+      }
+      else{
+        const data = await response.json();
+        console.log("Lỗi ", data);
+      }
+    } catch (error) {
+      console.log("Lỗi ", error);
+    }
+  }
   const handleClickshowRelated = async()=>{
     try {
+      
       let token = await getValidAccessToken()
       const response = await fetch(
         `http://localhost:8080/ai/getMailsRelate?idMail=${id}&topk=${8}`,
@@ -125,6 +219,66 @@ export default function MailDetail({ id }) {
       if (response.ok){
         const data = await response.json();
         setRelatedMails(data)
+      }
+      else{
+        const data = await response.json();
+        console.log("Lỗi ", data);
+      }
+    } catch (error) {
+      console.log("Lỗi ", error);
+    }
+  }
+  
+  const handleGetLienQuan = async()=>{
+    try {
+      const fullEmail = `
+        Người gửi : ${inforUser.userFrom.name} <${inforUser.userFrom.mail}>
+
+        Người nhận : ${inforUser.userTo.name} <${inforUser.userTo.mail}>
+
+        Chủ đề : ${email.subject}
+
+        Nội dung :
+        ${email.content}
+        `.trim();
+      let tg_mail = [];
+      for (let i = 0; i < relatedMails.length; i++) {
+        const mail = relatedMails[i];
+              
+        let content = `
+        Người gửi : ${mail.userFromName} <${mail.userFrom}>
+
+        Người nhận : ${mail.userToName} <${mail.userTo}>
+
+        Chủ đề : ${mail.subject}
+
+        Nội dung :
+        ${mail.content}
+        `.trim();
+
+              tg_mail.push(content);
+            }
+        if (tg_mail.length ==0) return
+      const response = await fetch(
+        `${API_CONFIG.AI_URL}/email_correlation`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            target_email: fullEmail,
+            list_email: tg_mail
+          }),
+        }
+      );
+      if (response.ok){
+        const data = await response.json();
+        const updatedMails = relatedMails.map((mail, idx) => ({
+          ...mail,
+          relatedReason: data.correlations[idx] || ""
+        }));
+        setRelatedMails(updatedMails);
       }
       else{
         const data = await response.json();
@@ -183,20 +337,17 @@ export default function MailDetail({ id }) {
     return `${day} thg ${month}`; 
   };
 
-  const refreshSuggestions = () => {
-    const pool = [
-      "Cảm ơn bạn rất nhiều!",
-      "Tôi sẽ xem lại và báo cáo.",
-      "Tôi đồng ý với nội dung trên.",
-      "Chúng ta sẽ bàn thêm trong cuộc họp.",
-      "Tôi đã nhận được, cảm ơn bạn.",
-      "Đã hiểu, cảm ơn bạn!",
-    ];
-    const newSuggestions = pool.sort(() => 0.5 - Math.random()).slice(0, 4);
-    setSuggestions(newSuggestions);
+  const refreshSuggestions = async() => {
+    await handleReloadSuggestion()
   };
 
-  const toggleSummary = () => setShowSummary((s) => !s);
+  const toggleSummary = () => {
+    setShowSummary((s) => !s);
+    if (showSummary == false){
+      handleSumaryClick()
+      
+    }
+  }
   const handleDowload = async (name,fileName)=>{
     try {
       let token = await getValidAccessToken();
@@ -242,7 +393,6 @@ export default function MailDetail({ id }) {
               <h1 className="text-2xl font-semibold text-gray-900">{email.subject}</h1>
               <button
                 onClick={() => {
-                  handleClickshowRelated()
                   setShowRelated((s) => !s)}
                 }
                 className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm text-gray-700"
@@ -364,6 +514,7 @@ export default function MailDetail({ id }) {
             {isReplyOpen && (
               <div className="sticky bottom-0 bg-white z-10 px-6 py-4 border-t">
                 <ReplyBox
+                  inforUser = {inforUser}
                   email = {email}
                   mailTo = {inforUser.userFrom.mail}
                   text={replyText}
@@ -375,6 +526,7 @@ export default function MailDetail({ id }) {
                   onRemove={(i) => removeFile("reply", i)}
                   onCancel={() => setIsReplyOpen(false)}
                   refreshSuggestions={refreshSuggestions}
+                  isLoadSuggest = {isLoadSuggest}
                   suggestions={suggestions}
                   defaultBody={`---------- Re: message ----------\nFrom: ${inforUser.userFrom.name}<${inforUser.userFrom.mail}> \nSubject: ${email.subject}\nDate: ${email.createAt}\nTo: ${inforUser.userTo.name}\n\n${email.content}\n\n-------------------------------\n`}
                 />
@@ -403,7 +555,16 @@ export default function MailDetail({ id }) {
         {/* RELATED MAILS */}
         {showRelated && (
           <div className="w-80 border-l bg-gray-50 flex flex-col">
-            <div className="px-4 py-3 border-b font-medium text-gray-700">✉️ Mail liên quan</div>
+            <div className="px-4 py-3 border-b flex justify-between items-center font-medium text-gray-700">
+              <span>✉️ Mail liên quan</span>
+              <button
+                type="button"
+                className="text-xs text-blue-600 underline cursor-pointer"
+                onClick={() => {handleGetLienQuan()}}
+              >
+                Xem lý do lọc
+              </button>
+            </div>
             <div className="flex-1 overflow-y-auto">
               {relatedMails.map((m) => (
                 <Link
@@ -414,6 +575,11 @@ export default function MailDetail({ id }) {
                   <div className="text-sm font-medium text-gray-900 truncate">{m.subject}</div>
                   <div className="text-xs text-gray-600">{m.userFromName} • {formatDate(m.createAt)}</div>
                   <div className="text-xs text-gray-500 truncate mt-1">{m.content}</div>
+                  {m.relatedReason && (
+                    <div className="text-xs text-blue-600 italic mt-1">
+                      {m.relatedReason}
+                    </div>
+                  )}
                 </Link>
               ))}
             </div>

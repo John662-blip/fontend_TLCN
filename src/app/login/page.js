@@ -5,6 +5,7 @@ import { useState } from "react";
 import { getValidAccessToken } from "@/untils/getToken";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -25,7 +26,12 @@ export default function LoginPage() {
     });
 
       if (!response.ok) {
-        alert("Đăng nhập thất bại");
+        Swal.fire({
+          icon: 'error',           // biểu tượng lỗi
+          title: 'Đăng nhập thất bại',
+          text: 'Sai tên đăng nhập và mật khẩu',
+          confirmButtonText: 'OK'
+        });
       }
       else{
         const data = await response.json();
@@ -57,7 +63,12 @@ export default function LoginPage() {
       }
     });
       if (!response.ok) {
-        // alert("Đăng nhập thất bại");
+        Swal.fire({
+          icon: 'error',           // biểu tượng lỗi
+          title: 'Đăng nhập thất bại',
+          text: 'Sai tên đăng nhập và mật khẩu',
+          confirmButtonText: 'OK'
+        });
       }
       else{
         const data = await response.json();

@@ -19,6 +19,7 @@ import API_CONFIG from "@/untils/Config";
 import { useRef } from "react";
 
 export default function MailDetail({ id }) {
+  const [isLoadingRelatedReason, setIsLoadingRelatedReason] = useState(false);
   const [email,setEmail] = useState({
     content : "",
     createAt:"",
@@ -231,6 +232,8 @@ export default function MailDetail({ id }) {
   
   const handleGetLienQuan = async()=>{
     try {
+      if (relatedMails.length === 0) return;
+      setIsLoadingRelatedReason(true);
       const fullEmail = `
         Người gửi : ${inforUser.userFrom.name} <${inforUser.userFrom.mail}>
 
@@ -286,6 +289,8 @@ export default function MailDetail({ id }) {
       }
     } catch (error) {
       console.log("Lỗi ", error);
+    } finally {
+      setIsLoadingRelatedReason(false);
     }
   }
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -575,7 +580,12 @@ export default function MailDetail({ id }) {
                   <div className="text-sm font-medium text-gray-900 truncate">{m.subject}</div>
                   <div className="text-xs text-gray-600">{m.userFromName} • {formatDate(m.createAt)}</div>
                   <div className="text-xs text-gray-500 truncate mt-1">{m.content}</div>
-                  {m.relatedReason && (
+                  {isLoadingRelatedReason && (
+                    <div className="text-xs text-gray-400 italic mt-1">
+                      Đang tải lý do lọc...
+                    </div>
+                  )}
+                  {m.relatedReason && !isLoadingRelatedReason && (
                     <div className="text-xs text-blue-600 italic mt-1">
                       {m.relatedReason}
                     </div>

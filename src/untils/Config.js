@@ -1,5 +1,5 @@
 const API_CONFIG = {
-  AI_URL: "https://dc5b7764de66.ngrok-free.app",
+  AI_URL: "https://spleeny-kera-unadjudicated.ngrok-free.dev",
   BACKEND_URL: "http://localhost:8080",
 };
 
